@@ -7,7 +7,11 @@ Snaps objects to a grid when placing and displays a build grid around it (unless
 
 Credits to zkm2erjfdb and Levorto for writing the original single-player versions (Architectural Geometry and Assisted Geometry). This mod is a replacement for those mods; if you have one of them enabled as well, unpredictable things will happen.
 
-Description of the options:
+# Installation
+
+If you have the game on Steam, it's easiest to subscribe to the mod there. Otherwise, download this and put the folder in the game's mods folder. Then you can enable and configure it on the in-game mods menu.
+
+# Configuration options
 
 <table>
 <tr><th>Option</th><th>Description</th>
