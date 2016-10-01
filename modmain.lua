@@ -966,11 +966,15 @@ end
 
 local function AddKeyHandlers(self)
 	-- We want to make sure that chatting, or being in menus, etc, doesn't toggle
+	local function GetActiveScreenName()
+		local screen = GLOBAL.TheFrontEnd:GetActiveScreen()
+		return screen and screen.name or ""
+	end
 	local function IsDefaultScreen()
-		return (GLOBAL.TheFrontEnd:GetActiveScreen().name or ""):find("HUD") ~= nil
+		return GetActiveScreenName():find("HUD") ~= nil
 	end
 	local function IsScoreboardScreen()
-		return (GLOBAL.TheFrontEnd:GetActiveScreen().name or ""):find("PlayerStatusScreen") ~= nil
+		return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
 	end
 	
 	local ignore_key = false
