@@ -600,7 +600,7 @@ function Placer:OnUpdate(dt)
 	
 	--end of code that closely matches the normal Placer:OnUpdate
 	
-	local color = canbuild and goodcolor or badcolor
+	local color = self.can_build and goodcolor or badcolor
 	self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 	for i, v in ipairs(self.linked) do
 		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
