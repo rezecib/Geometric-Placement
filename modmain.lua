@@ -252,7 +252,7 @@ so, for world -> lattice:
 [ bgx ] = [ a b ]^-1 [ x ]
 [ bgz ]   [ c d ]    [ z ]
 
-			 /adjugate\, /determinant\
+/adjugate\,  /determinant\
 [ a b ]^-1 = [  d -b ]
 [ c d ]      [ -c  a ] / (ad - bc)
 ]]
