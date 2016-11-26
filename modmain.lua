@@ -252,7 +252,7 @@ so, for world -> lattice:
 [ bgx ] = [ a b ]^-1 [ x ]
 [ bgz ]   [ c d ]    [ z ]
 
-             /adjugate\, /determinant\
+			 /adjugate\, /determinant\
 [ a b ]^-1 = [  d -b ]
 [ c d ]      [ -c  a ] / (ad - bc)
 ]]
@@ -315,6 +315,7 @@ end
 
 --[[ Placer Component ]]--
 -- Most of the modifications we can make to the Placer class directly, so it only runs once
+-- if DST then require("components/deployhelper") end
 Placer = require("components/placer")
 function Placer:SetCursorVisibility(show)
 	local ThePlayer = GetPlayer()
@@ -568,19 +569,38 @@ function Placer:OnUpdate(dt)
 	if self.tileinst then self.tileinst.Transform:SetPosition(TheWorld.Map:GetTileCenterPoint(pt:Get())) end
 	
 	if self.fixedcameraoffset ~= nil then
-        local rot = self.fixedcameraoffset - TheCamera:GetHeading() -- rotate against the camera
-        self.inst.Transform:SetRotation(rot)
-        for i, v in ipairs(self.linked) do
-            v.Transform:SetRotation(rot)
-        end
-		self._rot = rot
+		local rot = self.fixedcameraoffset - TheCamera:GetHeading() -- rotate against the camera
+		self.inst.Transform:SetRotation(rot)
+		for i, v in ipairs(self.linked) do
+			v.Transform:SetRotation(rot)
+		end
+		self._rot = rot --#rezecib so the grid placers can test points for this rotation as well
+	end
+	
+	--#rezecib This is for rotating fences and gates to match nearby fences
+	if self.onupdatetransform ~= nil then
+		self.onupdatetransform(self.inst)
+	end
+	
+	if self.testfn ~= nil then    
+		self.can_build, self.mouse_blocked = self.testfn(pt, self._rot)
+	else
+		self.can_build = true
+		self.mouse_blocked = false
+	end
+	--#rezecib Not using mouse_blocked is intentional; it goes against the idea of trying
+	--			to carefully align the placement with the grid; it would get annoying
+	--			if it got hidden every time you passed over a small obstruction
+	
+	if DST then
+		--#rezecib This seems to be specific to showing the range of nearby flingomatics
+		local x, y, z = self.inst.Transform:GetWorldPosition()
+		GLOBAL.TriggerDeployHelpers(x, y, z, 64)
 	end
 	
 	--end of code that closely matches the normal Placer:OnUpdate
 	
-	local color = nil
-	self.can_build, color = self:TestPoint(self.inst:GetPosition())
-	
+	local color = canbuild and goodcolor or badcolor
 	self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 	for i, v in ipairs(self.linked) do
 		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
