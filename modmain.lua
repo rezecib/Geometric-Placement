@@ -592,7 +592,9 @@ function Placer:OnUpdate(dt)
 	--			to carefully align the placement with the grid; it would get annoying
 	--			if it got hidden every time you passed over a small obstruction
 	
-	if DST then
+	--#rezecib I could use CurrentRelease.GreaterOrEqualTo( "R05_ANR_HERDMENTALITY" )
+	--			but I think duck-typing is the better solution here
+	if type(GLOBAL.rawget(GLOBAL, "TriggerDeployHelpers")) == "function" then
 		--#rezecib This seems to be specific to showing the range of nearby flingomatics
 		local x, y, z = self.inst.Transform:GetWorldPosition()
 		GLOBAL.TriggerDeployHelpers(x, y, z, 64)
