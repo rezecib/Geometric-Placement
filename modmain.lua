@@ -775,6 +775,12 @@ local function PlacerPostInit(self)
 		end
 	end
 
+	if not CONTROLLEROFFSET then
+		--Then the ground action hints can get in the way; increase the offset
+		-- note that these action hints only get used by controllers
+		GetPlayer().HUD.controls.groundactionhint:SetOffset(Vector3(0, 200, 0))
+	end
+
 	--keeps track of the build grid objects, indexed by lattice coordinates
 	self.linked = self.linked or {}
 	self.build_grid = nil
