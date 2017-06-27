@@ -30,7 +30,6 @@ local function CheckToLoadIcon(modname)
 			}
 			local prefab = Prefab("MODSCREEN_"..modname, nil, modinfoassets, nil)
 			RegisterPrefabs(prefab)
-			TheSim:LoadPrefabs({prefab})
 		end
 		TheSim:LoadPrefabs({"MODSCREEN_"..modname})
 	end
@@ -367,7 +366,7 @@ function OptionsScreen:_ctor(...)
 			namelookup[v.name] = i
 			table.insert(settings, {name = v.name, label = v.label, options = v.options, default = v.default, saved = v.saved})
 		end
-		for option,_ in pairs(dirty_options) do
+		for option,widget in pairs(dirty_options) do
 			if option[false] then
 				option[false] = ReregisterControl(option[false], option.value, false)
 			end
@@ -375,6 +374,7 @@ function OptionsScreen:_ctor(...)
 				option[true] = ReregisterControl(option[true], option.value, true)
 			end
 			option.saved = option.value
+			widget.last_value = option.value
 			local setting_index = namelookup[option.name]
 			if setting_index == nil then
 				-- Maybe this isn't in the normal mod config; we should save it anyway
@@ -499,7 +499,7 @@ local function BuildOptionSpinner(self, root, i, v)
 				if root.dirty_options[v] == nil then
 					root.num_dirty_options = root.num_dirty_options + 1
 				end
-				root.dirty_options[v] = true
+				root.dirty_options[v] = opt
 				self.mod_apply_button:Enable()
 			end
 		end
@@ -600,7 +600,7 @@ function OptionsScreen:MapModControl(option, v)
 				root.num_dirty_options = root.num_dirty_options + 1
 			end
 			option.changed_image:Show()
-			root.dirty_options[v] = true
+			root.dirty_options[v] = option
 			self.mod_apply_button:Enable()
 		end
 		v.value = key_char
