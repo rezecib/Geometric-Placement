@@ -56,7 +56,10 @@ KEYBOARDTOGGLEKEY = GetModConfigData("KEYBOARDTOGGLEKEY")
 if type(KEYBOARDTOGGLEKEY) == "string" then
 	KEYBOARDTOGGLEKEY = KEYBOARDTOGGLEKEY:lower():byte()
 end
-GEOMETRYTOGGLEKEY = GetModConfigData("GEOMETRYTOGGLEKEY"):lower():byte()
+GEOMETRYTOGGLEKEY = GetModConfigData("GEOMETRYTOGGLEKEY")
+if type(GEOMETRYTOGGLEKEY) == "string" then
+	GEOMETRYTOGGLEKEY = GEOMETRYTOGGLEKEY:lower():byte()
+end
 SHOWMENU = GetModConfigData("SHOWMENU")
 local BUILDGRID = GetModConfigData("BUILDGRID")
 local CONTROLLEROFFSET = GetModConfigData("CONTROLLEROFFSET")
@@ -116,6 +119,9 @@ SetColor(COLORS)
 
 local HIDEBLOCKED = GetModConfigData("HIDEBLOCKED")
 local SHOWTILE = GetModConfigData("SHOWTILE")
+local function SetShowTile(showtile)
+	SHOWTILE = showtile
+end
 
 local HIDEPLACER = GetModConfigData("HIDEPLACER")
 local HIDECURSOR = GetModConfigData("HIDECURSOR")
@@ -142,6 +148,12 @@ local inferred_last_geometries = {
 	POINTY_HEXAGON = "DIAMOND",
 }
 local LAST_GEOMETRY = inferred_last_geometries[GEOMETRY]
+
+local ModSettings = nil
+if DST then
+	ModSettings = require("tools/modsettings")
+	ModSettings.AddSetting(modname, "SHOWTILE", SetShowTile)
+end
 
 --[[ Coordinate Systems ]]--
 -- The idea of the geometries is that there's an abstract "lattice space", which is a normal grid.
@@ -979,10 +991,16 @@ if DST then
 		and action_code == GLOBAL.ACTIONS.DEPLOY.code
 		and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			local ThePlayer = GLOBAL.ThePlayer
-			if not (ThePlayer and ThePlayer.replica and ThePlayer.replica.inventory and
-			ThePlayer.replica.inventory.classified and ThePlayer.replica.inventory.classified:GetActiveItem()
-			and (ThePlayer.replica.inventory.classified:GetActiveItem():HasTag("wallbuilder") 
-			or ThePlayer.replica.inventory.classified:GetActiveItem():HasTag("groundtile"))) then
+			local activeitem = ThePlayer and ThePlayer.replica
+							and ThePlayer.replica.inventory
+							and ThePlayer.replica.inventory.classified
+							and ThePlayer.replica.inventory.classified:GetActiveItem()
+			if not activeitem or not (
+				   activeitem:HasTag("wallbuilder")
+				or activeitem:HasTag("fencebuilder")
+				or activeitem:HasTag("gatebuilder")
+				or activeitem:HasTag("groundtile")
+				) then
 				x,_,z = Snap(Vector3(x, 0, z)):Get()
 			end
 		end
@@ -992,107 +1010,144 @@ end
 
 --[[ Menu/Option Systems ]]--
 
-local function AddKeyHandlers(self)
-	-- We want to make sure that chatting, or being in menus, etc, doesn't toggle
-	local function GetActiveScreenName()
-		local screen = GLOBAL.TheFrontEnd:GetActiveScreen()
-		return screen and screen.name or ""
-	end
-	local function IsDefaultScreen()
-		return GetActiveScreenName():find("HUD") ~= nil
-	end
-	local function IsScoreboardScreen()
-		return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
-	end
-	
-	local ignore_key = false
-	local function set_ignore() ignore_key = true end
-	local function PushOptionsScreen()
-		if not SHOWMENU then
-			CTRL = not CTRL
-			return
-		end
-		local screen = GeometricOptionsScreen()
-		screen.togglekey = KEYBOARDTOGGLEKEY
-		screen.callbacks.save = function()
-			local _print = GLOBAL.print
-			GLOBAL.print = function() end --janky, but KnownModIndex functions kinda spam the logs
-			local config = GLOBAL.KnownModIndex:LoadModConfigurationOptions(modname, true)
-			local settings = {}
-			local namelookup = {} --makes it more resilient if I shift the order of options
-			for i,v in ipairs(config) do
-				namelookup[v.name] = i
-				table.insert(settings, {name = v.name, label = v.label, options = v.options, default = v.default, saved = v.saved})
-			end
-			settings[namelookup.CTRL].saved = CTRL
-			settings[namelookup.BUILDGRID].saved = BUILDGRID
-			settings[namelookup.GEOMETRY].saved = GEOMETRY.name
-			settings[namelookup.TIMEBUDGET].saved = timebudget_percent
-			settings[namelookup.HIDEPLACER].saved = HIDEPLACER
-			settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
-			settings[namelookup.SMALLGRIDSIZE].saved = GRID_SIZES[1]
-			settings[namelookup.MEDGRIDSIZE].saved = GRID_SIZES[2]
-			settings[namelookup.FLOODGRIDSIZE].saved = GRID_SIZES[3]
-			settings[namelookup.BIGGRIDSIZE].saved = GRID_SIZES[4]
-			settings[namelookup.COLORS].saved = COLORS
-			--Note: don't need to include options that aren't in the menu,
-			-- because they're already in there from the options load above
-			GLOBAL.KnownModIndex:SaveConfigurationOptions(function() end, modname, settings, true)
-			GLOBAL.print = _print --restore print functionality!
-		end
-		screen.callbacks.geometry = function(geometry)
-			grid_dirty = true
-			LAST_GEOMETRY = GEOMETRY
-			GEOMETRY = GEOMETRIES[geometry]
-		end
-		for name,button in pairs(screen.geometry_buttons) do
-			if name:upper() == GEOMETRY.name then
-				if DST then button:Select() else button:Disable() end
-			else
-				if DST then button:Unselect() else button:Enable() end
-			end
-		end
-		screen.callbacks.color = SetColor
-		for name,button in pairs(screen.color_buttons) do
-			if name == COLORS then
-				if DST then button:Select() else button:Disable() end
-			else
-				if DST then button:Unselect() else button:Enable() end
-			end
-			local gc = COLORTABLE[name].goodcolor
-			local bc = COLORTABLE[name].badcolor
-			if COLORTABLE[name].outline then
-				button.leftanim:GetAnimState():PlayAnimation("off", true)
-				button.rightanim:GetAnimState():PlayAnimation("on", true)
-			else
-				button.leftanim:GetAnimState():SetMultColour( bc.x, bc.y, bc.z, 1)
-				button.rightanim:GetAnimState():SetMultColour(gc.x, gc.y, gc.z, 1)
-			end
-		end
-		if CTRL then screen.toggle_button.onclick() end
-		screen.callbacks.toggle = function(toggle) CTRL = not toggle end
-		if not BUILDGRID then screen.grid_button.onclick() end
-		screen.callbacks.grid = function(toggle) BUILDGRID = toggle == 1 end
-		if HIDEPLACER then screen.placer_button.onclick() end
-		screen.callbacks.placer = function(toggle) HIDEPLACER = toggle == 0 end
-		if HIDECURSOR then screen.cursor_button.onclick() end
-		if HIDECURSORQUANTITY then screen.cursor_button.onclick() end
-		screen.callbacks.cursor = function(toggle)
-			HIDECURSOR = toggle ~= 2
-			HIDECURSORQUANTITY = toggle == 0
-		end
-		screen.refresh:SetSelected(timebudget_percent)
-		screen.callbacks.refresh = SetTimeBudget
-		screen.smallgrid:SetSelected(GRID_SIZES[1])
-		screen.medgrid:SetSelected(GRID_SIZES[2])
-		screen.floodgrid:SetSelected(GRID_SIZES[3])
-		screen.biggrid:SetSelected(GRID_SIZES[4])
-		screen.callbacks.gridsize = SetGridSize
-		screen.callbacks.ignore = set_ignore
-		GLOBAL.TheFrontEnd:PushScreen(screen)
-	end
+-- We want to make sure that chatting, or being in menus, etc, doesn't toggle
+local function GetActiveScreenName()
+	local screen = GLOBAL.TheFrontEnd:GetActiveScreen()
+	return screen and screen.name or ""
+end
+local function IsDefaultScreen()
+	return GetActiveScreenName():find("HUD") ~= nil
+end
+local function IsScoreboardScreen()
+	return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
+end
 
-	-- Keyboard controls
+local IsKey = {}
+local ignore_key = false
+local function set_ignore() ignore_key = true end
+local function PushOptionsScreen()
+	if not SHOWMENU then
+		CTRL = not CTRL
+		return
+	end
+	local screen = GeometricOptionsScreen()
+	if DST then
+		screen.IsOptionsMenuKey = IsKey.OptionsMenu
+	else
+		screen.togglekey = KEYBOARDTOGGLEKEY
+	end
+	screen.callbacks.save = function()
+		local _print = GLOBAL.print
+		GLOBAL.print = function() end --janky, but KnownModIndex functions kinda spam the logs
+		local config = GLOBAL.KnownModIndex:LoadModConfigurationOptions(modname, true)
+		local settings = {}
+		local namelookup = {} --makes it more resilient if I shift the order of options
+		for i,v in ipairs(config) do
+			namelookup[v.name] = i
+			table.insert(settings, {name = v.name, label = v.label, options = v.options, default = v.default, saved = v.saved})
+		end
+		settings[namelookup.CTRL].saved = CTRL
+		settings[namelookup.BUILDGRID].saved = BUILDGRID
+		settings[namelookup.GEOMETRY].saved = GEOMETRY.name
+		settings[namelookup.TIMEBUDGET].saved = timebudget_percent
+		settings[namelookup.HIDEPLACER].saved = HIDEPLACER
+		settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
+		settings[namelookup.SMALLGRIDSIZE].saved = GRID_SIZES[1]
+		settings[namelookup.MEDGRIDSIZE].saved = GRID_SIZES[2]
+		settings[namelookup.FLOODGRIDSIZE].saved = GRID_SIZES[3]
+		settings[namelookup.BIGGRIDSIZE].saved = GRID_SIZES[4]
+		settings[namelookup.COLORS].saved = COLORS
+		--Note: don't need to include options that aren't in the menu,
+		-- because they're already in there from the options load above
+		GLOBAL.KnownModIndex:SaveConfigurationOptions(function() end, modname, settings, true)
+		GLOBAL.print = _print --restore print functionality!
+	end
+	screen.callbacks.geometry = function(geometry)
+		grid_dirty = true
+		LAST_GEOMETRY = GEOMETRY
+		GEOMETRY = GEOMETRIES[geometry]
+	end
+	for name,button in pairs(screen.geometry_buttons) do
+		if name:upper() == GEOMETRY.name then
+			if DST then button:Select() else button:Disable() end
+		else
+			if DST then button:Unselect() else button:Enable() end
+		end
+	end
+	screen.callbacks.color = SetColor
+	for name,button in pairs(screen.color_buttons) do
+		if name == COLORS then
+			if DST then button:Select() else button:Disable() end
+		else
+			if DST then button:Unselect() else button:Enable() end
+		end
+		local gc = COLORTABLE[name].goodcolor
+		local bc = COLORTABLE[name].badcolor
+		if COLORTABLE[name].outline then
+			button.leftanim:GetAnimState():PlayAnimation("off", true)
+			button.rightanim:GetAnimState():PlayAnimation("on", true)
+		else
+			button.leftanim:GetAnimState():SetMultColour( bc.x, bc.y, bc.z, 1)
+			button.rightanim:GetAnimState():SetMultColour(gc.x, gc.y, gc.z, 1)
+		end
+	end
+	if CTRL then screen.toggle_button.onclick() end
+	screen.callbacks.toggle = function(toggle) CTRL = not toggle end
+	if not BUILDGRID then screen.grid_button.onclick() end
+	screen.callbacks.grid = function(toggle) BUILDGRID = toggle == 1 end
+	if HIDEPLACER then screen.placer_button.onclick() end
+	screen.callbacks.placer = function(toggle) HIDEPLACER = toggle == 0 end
+	if HIDECURSOR then screen.cursor_button.onclick() end
+	if HIDECURSORQUANTITY then screen.cursor_button.onclick() end
+	screen.callbacks.cursor = function(toggle)
+		HIDECURSOR = toggle ~= 2
+		HIDECURSORQUANTITY = toggle == 0
+	end
+	screen.refresh:SetSelected(timebudget_percent)
+	screen.callbacks.refresh = SetTimeBudget
+	screen.smallgrid:SetSelected(GRID_SIZES[1])
+	screen.medgrid:SetSelected(GRID_SIZES[2])
+	screen.floodgrid:SetSelected(GRID_SIZES[3])
+	screen.biggrid:SetSelected(GRID_SIZES[4])
+	screen.callbacks.gridsize = SetGridSize
+	screen.callbacks.ignore = set_ignore
+	GLOBAL.TheFrontEnd:PushScreen(screen)
+end
+
+-- Keyboard controls
+if DST then
+	IsKey.OptionsMenu = ModSettings.AddControl(
+		modname,
+		"KEYBOARDTOGGLEKEY",
+		"Options Menu",
+		"B",
+		function()
+			if IsDefaultScreen() then
+				if ignore_key then
+					ignore_key = false
+				else
+					PushOptionsScreen()				
+				end
+			end
+		end,
+		false
+	)
+	ModSettings.AddControl(
+		modname,
+		"GEOMETRYTOGGLEKEY",
+		"Toggle Geometry",
+		"V",
+		function()
+			if IsDefaultScreen() then
+				grid_dirty = true
+				local _GEOMETRY = GEOMETRY
+				GEOMETRY = LAST_GEOMETRY
+				LAST_GEOMETRY = _GEOMETRY
+			end
+		end,
+		false
+	)
+else
 	TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
 		function()
 			if IsDefaultScreen() then
@@ -1112,28 +1167,27 @@ local function AddKeyHandlers(self)
 				LAST_GEOMETRY = _GEOMETRY
 			end
 		end)
-	
-	-- Controller controls
-	-- This is pressing the right stick in
-	-- CONTROL_MENU_MISC_3 is the same thing as CONTROL_OPEN_DEBUG_MENU
-	-- CONTROL_MENU_MISC_4 is the right stick click
-	TheInput:AddControlHandler(DST and
-		GLOBAL.CONTROL_MENU_MISC_3 or
-		GLOBAL.CONTROL_OPEN_DEBUG_MENU,
-		DST and 
-		function(down)
-			-- In DST, only let them do it on the scoreboard screen
-			if not down and IsScoreboardScreen() then
-				PushOptionsScreen()
-			end
-		end or function(down)
-			-- In single-player, let them do it on the main screen
-			if not down and IsDefaultScreen() then
-				PushOptionsScreen()
-			end
-		end)
 end
-AddClassPostConstruct( "widgets/controls", AddKeyHandlers )
+
+-- Controller controls
+-- This is pressing the right stick in
+-- CONTROL_MENU_MISC_3 is the same thing as CONTROL_OPEN_DEBUG_MENU
+-- CONTROL_MENU_MISC_4 is the right stick click
+TheInput:AddControlHandler(DST and
+	GLOBAL.CONTROL_MENU_MISC_3 or
+	GLOBAL.CONTROL_OPEN_DEBUG_MENU,
+	DST and 
+	function(down)
+		-- In DST, only let them do it on the scoreboard screen
+		if not down and IsScoreboardScreen() then
+			PushOptionsScreen()
+		end
+	end or function(down)
+		-- In single-player, let them do it on the main screen
+		if not down and IsDefaultScreen() then
+			PushOptionsScreen()
+		end
+	end)
 
 if DST then
 	AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)

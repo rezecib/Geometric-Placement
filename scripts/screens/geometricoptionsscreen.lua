@@ -436,7 +436,7 @@ end
 function GeometricOptionsScreen:OnRawKey(key, down)
 	if GeometricOptionsScreen._base.OnRawKey(self, key, down) then return true end
 	
-	if key == self.togglekey and not down then	
+	if self.IsOptionsMenuKey(key) and not down then	
 		self.callbacks.ignore()
 		self:Close()
 		return true

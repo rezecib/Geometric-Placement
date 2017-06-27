@@ -1,7 +1,7 @@
 name = "Geometric Placement"
 description = "Snaps objects to a grid when placing and displays a build grid around it (unless you hold ctrl)."
 author = "rezecib"
-version = "2.1.8"
+version = "2.2.0"
 
 forumthread = "/files/file/1108-geometric-placement/"
 
@@ -55,7 +55,7 @@ configuration_options =
 {
 	{
 		name = "CTRL",
-		label = "CTRL Turns Mod:",
+		label = "CTRL Turns Mod",
 		options =	{
 						{description = "On", data = true},
 						{description = "Off", data = false},
@@ -68,14 +68,14 @@ configuration_options =
         label = "Options Button",
         options = keyslist,
         default = "B",
-		hover = "A key to open the mod's options. On controllers, open\nthe scoreboard and then use Menu Misc 3 (left stick click).",
+		hover = "A key to open the mod's options. On controllers, open\nthe scoreboard and then use Menu Misc 3 (left stick click).\nI recommend setting this with the Settings menu in DST.",
     },    
     {
         name = "GEOMETRYTOGGLEKEY",
         label = "Toggle Button",
         options = keyslist,
         default = "V",
-		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)",
+		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)\nI recommend setting this with the Settings menu in DST.",
     },    
     {
         name = "SHOWMENU",
