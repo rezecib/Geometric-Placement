@@ -4,10 +4,12 @@ and I want this to behave like a single "plugin" that people can add to their mo
 without introducing the possibility of people getting some of it but missing pieces.
 ]]
 
---TODO: check controller compatibility, focus hookups
+--TODO: check controller compatibility, focus hookups for the right panel
+--TODO: maybe better handling of dirty options:
+--	what happens when switching mods?
+--	what about making mod settings changes, then going to normal settings and changing? (currently apply is separate)
 --TODO: more documentation of the API
 --TODO: check more edge cases to fix bugs?
---TODO: make sure that when multiple mods use this, it properly confirms settings changes when switching between mod configs
 
 --[[ Mod Settings Member Variables ]]--
 
@@ -19,7 +21,10 @@ local modcontrols_lookup = {}
 
 local ModSettings = {}
 
+local mod_icon_prefabs = {}
+
 local function CheckToLoadIcon(modname)
+	-- Written with reference to ModsScreen:LoadModInfoPrefabs
 	if modsettings[modname] == nil and modcontrols[modname] == nil then
 		--In order to have the mod icons on the menu, we need to load them
 		local info = KnownModIndex:GetModInfo(modname)
@@ -29,9 +34,13 @@ local function CheckToLoadIcon(modname)
 				Asset("IMAGE", info.iconpath),
 			}
 			local prefab = Prefab("MODSCREEN_"..modname, nil, modinfoassets, nil)
-			RegisterPrefabs(prefab)
+			if mod_icon_prefabs then -- we haven't loaded them yet
+				table.insert(mod_icon_prefabs, prefab)
+			else
+				RegisterPrefabs(prefab)
+				TheSim:LoadPrefabs({prefab.name})
+			end
 		end
-		TheSim:LoadPrefabs({"MODSCREEN_"..modname})
 	end
 end
 
@@ -218,6 +227,7 @@ local function BuildModSelectionPanel(self, root, mod_table, is_controls)
 	root.mods_scroll_list = root:AddChild(ScrollableList(mod_widgets, 322/mods_list_scale, 400/mods_list_scale, 74/mods_list_scale, 10, nil, nil, 185, nil, nil, -22))
 	root.mods_scroll_list:SetScale(mods_list_scale)
 	root.mods_scroll_list:SetPosition(-185, -33)
+	root.focus_start = root.mods_scroll_list
 	
 	root.options_scroll_list = root:AddChild(is_controls
 		and ScrollableList({}, 500, 400, 40, 12, nil, nil, 232, nil, nil, -5)
@@ -252,6 +262,15 @@ function OptionsScreen:_ctor(...)
 	self.SetTab = function() end
 	OptionsScreen_ctor(self, ...)
 	self.SetTab = _SetTab
+	if mod_icon_prefabs then
+		local mod_icon_prefab_names = {}
+		for _,prefab in ipairs(mod_icon_prefabs) do
+			RegisterPrefabs(prefab)
+			table.insert(mod_icon_prefab_names, prefab.name)
+		end
+		TheSim:LoadPrefabs(mod_icon_prefab_names)
+		mod_icon_prefabs = nil --mark it as having been loaded
+	end
 	local nav_bar = self.nav_bar
 	self.nav_bar = self.root:AddChild(TEMPLATES.NavBarWithScreenTitle(nav_bar.title:GetString(), "tall"))
 	local existing_nav_bar_buttons = {}
@@ -296,6 +315,7 @@ function OptionsScreen:_ctor(...)
 	self:RemoveChild(nav_bar)
 	nav_bar:Kill()
 	
+	self.nav_button_order = { "settings", "controls", "modsettings", "modcontrols" }
 	self.nav_buttons = {
 		settings = self.settings_button,
 		controls = self.controls_button,
@@ -345,7 +365,9 @@ function OptionsScreen:_ctor(...)
 	end))
 	self.mod_reset_button:SetScale(.8)
 	self.menu:AddCustomItem(self.mod_reset_button)
-	self.mod_reset_button:SetPosition(self.reset_button:GetPosition())
+	if self.reset_button then -- if not, controller is attached and it won't show this at all anyway
+		self.mod_reset_button:SetPosition(self.reset_button:GetPosition())
+	end
 	
 	self.mod_apply_button = self.root:AddChild(TEMPLATES.Button(STRINGS.UI.MODSSCREEN.APPLY, function()
 		-- First we write the mod config, then we run the callbacks
@@ -401,10 +423,13 @@ function OptionsScreen:_ctor(...)
 		self.mod_apply_button:Disable()
 	end))
 	self.menu:AddCustomItem(self.mod_apply_button)
-	self.mod_apply_button:SetPosition(self.apply_button:GetPosition())
+	if self.apply_button then -- if not, controller is attached and it won't show this at all anyway
+		self.mod_apply_button:SetPosition(self.apply_button:GetPosition())
+	end
 	self.mod_apply_button:Disable()
 
-
+	self.settingsroot.focus_start = self.grid
+	self.controlsroot.focus_start = self.active_list
 	self.tabs = {
 		settings = self.settingsroot,
 		controls = self.controlsroot,
@@ -415,6 +440,8 @@ function OptionsScreen:_ctor(...)
 		v:Hide()
 	end
 	self:SetTab("settings")
+	
+	self:RefreshNav()
 end
 
 -- Unfortunately this part of OptionsScreen was really not written in an extensible way
@@ -437,12 +464,14 @@ function OptionsScreen:SetTab(tab, ...)
 			self:ShowModOptions(1)
 		end
 	end
-	if tab == "modsettings" or tab == "modcontrols" then
-		self.mod_apply_button:Show()
-		self.apply_button:Hide()
-	else
-		self.apply_button:Show()
-		self.mod_apply_button:Hide()
+	if self.apply_button then
+		if tab == "modsettings" or tab == "modcontrols" then
+			self.mod_apply_button:Show()
+			self.apply_button:Hide()
+		else
+			self.apply_button:Show()
+			self.mod_apply_button:Hide()
+		end
 	end
 	if tab == "modcontrols" then
 		self.mod_reset_button:Show()
@@ -452,16 +481,38 @@ function OptionsScreen:SetTab(tab, ...)
 	self:UpdateMenu()
 end
 
--- local OptionsScreen_UpdateMenu = OptionsScreen.UpdateMenu
--- function OptionsScreen:UpdateMenu(...)
-	-- OptionsScreen_UpdateMenu(self, ...)
-	
-	-- if self.selected_tab == "mod_controls" then
-		-- self.mod_reset_button:Show()
-	-- else
-		-- self.mod_reset_button:Hide()
-	-- end
--- end
+local OptionsScreen_RefreshNav = OptionsScreen.RefreshNav
+function OptionsScreen:RefreshNav(...)
+	local ret = OptionsScreen_RefreshNav(self, ...)
+	local function toleftcol()
+		return self.nav_buttons[self.selected_tab]
+	end
+	local function torightcol()
+		return self.tabs[self.selected_tab].focus_start
+	end
+	for i,v in ipairs(self.nav_button_order or {}) do
+		local button = self.nav_buttons[v]
+		if i > 1 then
+			button:SetFocusChangeDir(MOVE_UP, self.nav_buttons[self.nav_button_order[i-1]])
+		end
+		button:SetFocusChangeDir(MOVE_RIGHT, torightcol)
+		self.tabs[v].focus_start:SetFocusChangeDir(MOVE_LEFT, toleftcol)
+		if i < #self.nav_button_order then
+			button:SetFocusChangeDir(MOVE_DOWN, self.nav_buttons[self.nav_button_order[i+1]])
+		end
+	end
+	-- Blatantly copied from the original
+    if self.active_list and self.active_list.items then
+    	for k,v in pairs(self.active_list.items) do
+            if v.button_kb then
+    		    v.button_kb:SetFocusChangeDir(MOVE_LEFT, toleftcol)
+            elseif v.button_controller then
+                v.button_controller:SetFocusChangeDir(MOVE_LEFT, toleftcol)
+            end
+    	end
+    end
+	return ret
+end
 
 local spinner_height = 40
 local spinner_width = 170
