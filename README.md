@@ -1,5 +1,5 @@
 # Geometric-Placement
-Mod for Don't Starve and Don't Starve Together.
+Mod for Don't Starve and Don't Starve Together. Here's [a video](https://youtu.be/nqpDTZYOhNo) explaining the idea and usage of the mod.
 
 This should work with all versions of the game (vanilla, Reign of Giants, Shipwrecked, and Don't Starve Together). Also available on the Steam Workshop (<a href="http://steamcommunity.com/sharedfiles/filedetails/?id=356043883">single-player</a>, <a href="http://steamcommunity.com/sharedfiles/filedetails/?id=351325790">DST</a>) and the <a href="http://forums.kleientertainment.com/files/file/1108-geometric-placement/">Klei Forums</a>.
 
