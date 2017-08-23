@@ -260,8 +260,11 @@ local OptionsScreen_ctor = OptionsScreen._ctor
 function OptionsScreen:_ctor(...)
 	local _SetTab = self.SetTab
 	self.SetTab = function() end
+	local _UpdateMenu = self.UpdateMenu
+	self.UpdateMenu = function() end
 	OptionsScreen_ctor(self, ...)
 	self.SetTab = _SetTab
+	self.UpdateMenu = _UpdateMenu
 	if mod_icon_prefabs then
 		local mod_icon_prefab_names = {}
 		for _,prefab in ipairs(mod_icon_prefabs) do
@@ -364,10 +367,7 @@ function OptionsScreen:_ctor(...)
 		}))
 	end))
 	self.mod_reset_button:SetScale(.8)
-	self.menu:AddCustomItem(self.mod_reset_button)
-	if self.reset_button then -- if not, controller is attached and it won't show this at all anyway
-		self.mod_reset_button:SetPosition(self.reset_button:GetPosition())
-	end
+	self.mod_reset_button:Hide()
 	
 	self.mod_apply_button = self.root:AddChild(TEMPLATES.Button(STRINGS.UI.MODSSCREEN.APPLY, function()
 		-- First we write the mod config, then we run the callbacks
@@ -422,11 +422,7 @@ function OptionsScreen:_ctor(...)
 		self.tabs[self.selected_tab].num_dirty_options = 0
 		self.mod_apply_button:Disable()
 	end))
-	self.menu:AddCustomItem(self.mod_apply_button)
-	if self.apply_button then -- if not, controller is attached and it won't show this at all anyway
-		self.mod_apply_button:SetPosition(self.apply_button:GetPosition())
-	end
-	self.mod_apply_button:Disable()
+	self.mod_apply_button:Hide()
 
 	self.settingsroot.focus_start = self.grid
 	self.controlsroot.focus_start = self.active_list
@@ -442,6 +438,24 @@ function OptionsScreen:_ctor(...)
 	self:SetTab("settings")
 	
 	self:RefreshNav()
+end
+
+local OptionsScreen_UpdateMenu = OptionsScreen.UpdateMenu
+function OptionsScreen:UpdateMenu(...)
+	local ret = OptionsScreen_UpdateMenu(self, ...)
+	if #self.menu.items == 2 then -- controller is not attached and the apply/reset buttons have been added
+		self.menu:AddCustomItem(self.mod_apply_button)
+		-- if self.apply_button then -- if not, controller is attached and it won't show this at all anyway
+		self.mod_apply_button:SetPosition(self.apply_button:GetPosition())
+		-- end
+		self.mod_apply_button:Disable()
+		
+		self.menu:AddCustomItem(self.mod_reset_button)
+		-- if self.reset_button then -- if not, controller is attached and it won't show this at all anyway
+		self.mod_reset_button:SetPosition(self.reset_button:GetPosition())
+		-- end
+	end
+	return ret
 end
 
 -- Unfortunately this part of OptionsScreen was really not written in an extensible way
@@ -473,10 +487,12 @@ function OptionsScreen:SetTab(tab, ...)
 			self.mod_apply_button:Hide()
 		end
 	end
-	if tab == "modcontrols" then
-		self.mod_reset_button:Show()
-	else
-		self.mod_reset_button:Hide()
+	if self.reset_button then
+		if tab == "modcontrols" then
+			self.mod_reset_button:Show()
+		else
+			self.mod_reset_button:Hide()
+		end
 	end
 	self:UpdateMenu()
 end
