@@ -1,7 +1,7 @@
 name = "Geometric Placement"
 description = "Snaps objects to a grid when placing and displays a build grid around it (unless you hold ctrl)."
 author = "rezecib"
-version = "2.2.2"
+version = "2.2.3"
 
 forumthread = "/files/file/1108-geometric-placement/"
 
