@@ -51,20 +51,47 @@ local SpawnPrefab = GLOBAL.SpawnPrefab
 local GeometricOptionsScreen = DST and require("screens/geometricoptionsscreen")
 										or require("screens/geometricoptionsscreen_singleplayer")
 
-local CTRL = GetModConfigData("CTRL")
-KEYBOARDTOGGLEKEY = GetModConfigData("KEYBOARDTOGGLEKEY")
-if type(KEYBOARDTOGGLEKEY) == "string" then
-	KEYBOARDTOGGLEKEY = KEYBOARDTOGGLEKEY:lower():byte()
+local function PrintCorruptedConfig(configname, badvalue)
+	print("WARNING: mod config value \"" .. configname .. "\" for mod \"" .. modname
+			.. "\" is corrupted; it had unexpected value:", badvalue)
 end
-GEOMETRYTOGGLEKEY = GetModConfigData("GEOMETRYTOGGLEKEY")
-if type(GEOMETRYTOGGLEKEY) == "string" then
-	GEOMETRYTOGGLEKEY = GEOMETRYTOGGLEKEY:lower():byte()
+										
+local function GetConfig(configname, default, validator)
+	if type(validator) == "string" then
+		local validator_type = validator
+		validator = function(value) return type(value) == validator_type end
+	end
+	local value = GetModConfigData(configname)
+	if not validator(value) then
+		PrintCorruptedConfig(configname, value)
+		return default
+	end
+	return value
 end
-SHOWMENU = GetModConfigData("SHOWMENU")
-local BUILDGRID = GetModConfigData("BUILDGRID")
-local CONTROLLEROFFSET = GetModConfigData("CONTROLLEROFFSET")
 
-local TIMEBUDGET = GetModConfigData("TIMEBUDGET")
+local function GetKeyConfig(configname, default)
+	local value = GetModConfigData(configname)
+	if type(value) == "string" then
+		return value:lower():byte()
+	end
+	if type(value) ~= "number" then
+		PrintCorruptedConfig(configname, value)
+		return default:lower():byte()
+	end
+end
+
+local CTRL = GetConfig("CTRL", false, "boolean")
+KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
+GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
+SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
+local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
+local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
+
+local TIMEBUDGET = GetConfig("TIMEBUDGET", 0.1, function(value)
+	return value == false or (
+			type(value) == "number" and value > 0 and value <= 1
+		)
+end)
 local timebudget_percent = TIMEBUDGET
 local function SetTimeBudget(percent)
 	timebudget_percent = percent
@@ -77,10 +104,10 @@ end
 SetTimeBudget(TIMEBUDGET)
 
 local grid_dirty = false
-local SMALLGRIDSIZE = GetModConfigData("SMALLGRIDSIZE")
-local MEDGRIDSIZE = GetModConfigData("MEDGRIDSIZE")
-local FLOODGRIDSIZE = GetModConfigData("FLOODGRIDSIZE")
-local BIGGRIDSIZE = GetModConfigData("BIGGRIDSIZE")
+local SMALLGRIDSIZE = GetConfig("SMALLGRIDSIZE", 10, "number")
+local MEDGRIDSIZE = GetConfig("MEDGRIDSIZE", 6, "number")
+local FLOODGRIDSIZE = GetConfig("FLOODGRIDSIZE", 5, "number")
+local BIGGRIDSIZE = GetConfig("BIGGRIDSIZE", 2, "number")
 local GRID_SIZES = {SMALLGRIDSIZE, MEDGRIDSIZE, FLOODGRIDSIZE, BIGGRIDSIZE}
 local function SetGridSize(grid_type, new_size)
 	grid_dirty = true
@@ -96,7 +123,6 @@ for i,grid_offset in pairs(GRID_OFFSETS) do
 	GRID_OFFSETS[i] = Vector3(grid_offset, 0, grid_offset)
 end
 
-local COLORS = GetModConfigData("COLORS") or "blackwhiteoutline"
 local OUTLINE = false
 local goodcolor = nil
 local badcolor = nil
@@ -108,6 +134,10 @@ local COLORTABLE = {
 	blackwhite = { badcolor = Vector3(l, l, l), goodcolor = Vector3(h, h, h), outline = false },
 	blackwhiteoutline = { badcolor = Vector3(l, l, l), goodcolor = Vector3(h, h, h), outline = true },
 }
+local COLORS = GetConfig("COLORS", "blackwhiteoutline", function(value)
+	print(COLORTABLE[nil])
+	return COLORTABLE[value] ~= nil
+end)
 local function SetColor(colorname)
 	grid_dirty = true
 	COLORS = colorname
@@ -117,17 +147,17 @@ local function SetColor(colorname)
 end
 SetColor(COLORS)
 
-local HIDEBLOCKED = GetModConfigData("HIDEBLOCKED")
-local SHOWTILE = GetModConfigData("SHOWTILE")
+local HIDEBLOCKED = GetConfig("HIDEBLOCKED", false, "boolean")
+local SHOWTILE = GetConfig("SHOWTILE", false, "boolean")
 local function SetShowTile(showtile)
 	SHOWTILE = showtile
 end
 
-local HIDEPLACER = GetModConfigData("HIDEPLACER")
-local HIDECURSOR = GetModConfigData("HIDECURSOR")
+local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
+local HIDECURSOR = GetConfig("HIDECURSOR", false, "boolean")
 local HIDECURSORQUANTITY = HIDECURSOR == 1
 local HIDECURSOR = HIDECURSOR ~= false
-local REDUCECHESTSPACING = GetModConfigData("REDUCECHESTSPACING")
+local REDUCECHESTSPACING = GetConfig("REDUCECHESTSPACING", true, "boolean")
 if REDUCECHESTSPACING then
 -- other geometry mods ignore the special case for chests that increases the spacing for them
 -- in Builder:CanBuildAtPoint; however, reducing the built-in spacing by just a little bit
@@ -137,17 +167,6 @@ if REDUCECHESTSPACING then
 								or  GLOBAL.GetRecipe('treasurechest')
 	treasurechestrecipe.min_spacing = treasurechestrecipe.min_spacing - 0.1
 end
-
-local GEOMETRY = (GetModConfigData("GEOMETRY") or "SQUARE"):upper()
-local inferred_last_geometries = {
-	SQUARE = "X_HEXAGON",
-	DIAMOND = "FLAT_HEXAGON",
-	X_HEXAGON = "SQUARE",
-	Z_HEXAGON = "SQUARE",
-	FLAT_HEXAGON = "DIAMOND",
-	POINTY_HEXAGON = "DIAMOND",
-}
-local LAST_GEOMETRY = inferred_last_geometries[GEOMETRY]
 
 local ModSettings = nil
 if DST then
@@ -316,8 +335,22 @@ so, for world -> lattice:
 	end
 end
 
+local GEOMETRY = GetConfig("GEOMETRY", "SQUARE", function(value)
+	return type(value) == "string" and GEOMETRIES[value:upper()] ~= nil
+end):upper()
+local inferred_last_geometries = {
+	SQUARE = "X_HEXAGON",
+	DIAMOND = "FLAT_HEXAGON",
+	X_HEXAGON = "SQUARE",
+	Z_HEXAGON = "SQUARE",
+	FLAT_HEXAGON = "DIAMOND",
+	POINTY_HEXAGON = "DIAMOND",
+}
+local LAST_GEOMETRY = inferred_last_geometries[GEOMETRY]
+-- Convert from string to geometry data
 GEOMETRY = GEOMETRIES[GEOMETRY] or GEOMETRIES.SQUARE
 LAST_GEOMETRY = GEOMETRIES[LAST_GEOMETRY] or GEOMETRIES.X_HEXAGON
+
 local function Snap(pt, grid_type)
 	grid_type = grid_type or 1
 	local geometry = grid_type == 1 and GEOMETRY or GEOMETRIES.SQUARE
