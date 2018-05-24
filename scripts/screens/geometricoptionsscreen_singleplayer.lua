@@ -438,7 +438,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.refresh.hovertext_bg:SetScale(1/.6)
 
 	local smallgridsizeoptions = {}
-	for i=1,10 do smallgridsizeoptions[i] = {text=""..(i*2).."", data=i*2} end
+	for i=0,10 do smallgridsizeoptions[i+1] = {text=""..(i*2).."", data=i*2} end
 	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 200, 60, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
 	self.smallgrid:SetTextColour(0,0,0,1)
 	self.smallgrid:SetScale(.28, .6)
@@ -446,7 +446,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
 	self.smallgrid:SetPosition(125, -130)
 	local medgridsizeoptions = {}
-	for i=1,10 do medgridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 200, 60, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
 	self.medgrid:SetTextColour(0,0,0,1)
 	self.medgrid:SetScale(.28, .6)
@@ -454,7 +454,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
 	self.medgrid:SetPosition(178, -130)
 	local floodgridsizeoptions = {}
-	for i=1,10 do floodgridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 200, 60, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
 	self.floodgrid:SetTextColour(0,0,0,1)
 	self.floodgrid:SetScale(.28, .6)
@@ -462,7 +462,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
 	self.floodgrid:SetPosition(231, -130)
 	local biggridsizeoptions = {}
-	for i=1,5 do biggridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 200, 60, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
 	self.biggrid:SetTextColour(0,0,0,1)
 	self.biggrid:SetScale(.28, .6)
