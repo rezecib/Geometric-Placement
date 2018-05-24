@@ -68,14 +68,16 @@ configuration_options =
         label = "Options Button",
         options = keyslist,
         default = "B",
-		hover = "A key to open the mod's options. On controllers, open\nthe scoreboard and then use Menu Misc 3 (left stick click).\nI recommend setting this with the Settings menu in DST.",
+		-- hover = "A key to open the mod's options. On controllers, open\nthe scoreboard and then use Menu Misc 3 (left stick click).\nI recommend setting this with the Settings menu in DST.",
+		hover = "A key to open the mod's options. On controllers, open\nthe scoreboard and then use Menu Misc 3 (left stick click).",
     },    
     {
         name = "GEOMETRYTOGGLEKEY",
         label = "Toggle Button",
         options = keyslist,
         default = "V",
-		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)\nI recommend setting this with the Settings menu in DST.",
+		-- hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)\nI recommend setting this with the Settings menu in DST.",
+		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)",
     },    
     {
         name = "SHOWMENU",

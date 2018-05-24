@@ -4,6 +4,7 @@ and I want this to behave like a single "plugin" that people can add to their mo
 without introducing the possibility of people getting some of it but missing pieces.
 ]]
 
+--TODO: MAJOR update hooks into optionsscreen for redux, or whatever they are currently on when you get to this...
 --TODO: check controller compatibility, focus hookups for the right panel
 --TODO: maybe better handling of dirty options:
 --	what happens when switching mods?
@@ -255,6 +256,7 @@ local function ReregisterControl(handler, key, down)
 	return AddKeyHandler(TheInput, key:lower():byte(), handler_fn)
 end
 
+--[[ -- TODO
 local OptionsScreen = require("screens/optionsscreen")
 local OptionsScreen_ctor = OptionsScreen._ctor
 function OptionsScreen:_ctor(...)
@@ -509,12 +511,12 @@ function OptionsScreen:RefreshNav(...)
 	for i,v in ipairs(self.nav_button_order or {}) do
 		local button = self.nav_buttons[v]
 		if i > 1 then
-			button:SetFocusChangeDir(MOVE_UP, self.nav_buttons[self.nav_button_order[i-1]])
+			button:SetFocusChangeDir(MOVE_UP, self.nav_buttons[ self.nav_button_order[i-1] ])
 		end
 		button:SetFocusChangeDir(MOVE_RIGHT, torightcol)
 		self.tabs[v].focus_start:SetFocusChangeDir(MOVE_LEFT, toleftcol)
 		if i < #self.nav_button_order then
-			button:SetFocusChangeDir(MOVE_DOWN, self.nav_buttons[self.nav_button_order[i+1]])
+			button:SetFocusChangeDir(MOVE_DOWN, self.nav_buttons[ self.nav_button_order[i+1] ])
 		end
 	end
 	-- Blatantly copied from the original
@@ -751,5 +753,6 @@ function OptionsScreen:IsDirty(...)
 	end
 	return OptionsScreen_IsDirty(self, ...)
 end
+]]
 
 return ModSettings
