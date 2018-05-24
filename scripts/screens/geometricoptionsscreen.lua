@@ -264,7 +264,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	local percent_options = {}
 	for i = 1, 10 do percent_options[i] = {text = i.."0%", data = i/10} end
 	percent_options[11] = {text = "Unlimited", data = false}
-	self.refresh = self.proot:AddChild(Spinner(percent_options, 100, 30, {font=NEWFONT_SMALL,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.refresh = self.proot:AddChild(Spinner(percent_options, 100, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.refresh.OnChanged = function(_, data) self.callbacks.refresh(data) end
 	self.refresh:SetPosition(260, -30)
 	-- a little switcharoo to get the right parenting to happen in SetHoverText
@@ -277,22 +277,22 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 
 	local smallgridsizeoptions = {}
 	for i=1,10 do smallgridsizeoptions[i] = {text=""..(i*2).."", data=i*2} end
-	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 60, 30, {font=NEWFONT_SMALL,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
 	self.smallgrid:SetPosition(125, -120)
 	local medgridsizeoptions = {}
 	for i=1,10 do medgridsizeoptions[i] = {text=""..(i).."", data=i} end
-	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 60, 30, {font=NEWFONT_SMALL,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
 	self.medgrid:SetPosition(178, -120)
 	local floodgridsizeoptions = {}
 	for i=1,10 do floodgridsizeoptions[i] = {text=""..(i).."", data=i} end
-	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 60, 30, {font=NEWFONT_SMALL,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
 	self.floodgrid:SetPosition(231, -120)
 	local biggridsizeoptions = {}
 	for i=1,5 do biggridsizeoptions[i] = {text=""..(i).."", data=i} end
-	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 60, 30, {font=NEWFONT_SMALL,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
 	self.biggrid:SetPosition(284, -120)
 
