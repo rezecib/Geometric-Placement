@@ -276,22 +276,22 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.refresh.text = refreshtext
 
 	local smallgridsizeoptions = {}
-	for i=1,10 do smallgridsizeoptions[i] = {text=""..(i*2).."", data=i*2} end
+	for i=0,10 do smallgridsizeoptions[i+1] = {text=""..(i*2).."", data=i*2} end
 	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
 	self.smallgrid:SetPosition(125, -120)
 	local medgridsizeoptions = {}
-	for i=1,10 do medgridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
 	self.medgrid:SetPosition(178, -120)
 	local floodgridsizeoptions = {}
-	for i=1,10 do floodgridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
 	self.floodgrid:SetPosition(231, -120)
 	local biggridsizeoptions = {}
-	for i=1,5 do biggridsizeoptions[i] = {text=""..(i).."", data=i} end
+	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
 	self.biggrid:SetPosition(284, -120)

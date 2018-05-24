@@ -29,13 +29,13 @@ client_only_mod = true
 server_filter_tags = {}
 
 local smallgridsizeoptions = {}
-for i=1,10 do smallgridsizeoptions[i] = {description=""..(i*2).."", data=i*2} end
+for i=0,10 do smallgridsizeoptions[i+1] = {description=""..(i*2).."", data=i*2} end
 local medgridsizeoptions = {}
-for i=1,10 do medgridsizeoptions[i] = {description=""..(i).."", data=i} end
+for i=0,10 do medgridsizeoptions[i+1] = {description=""..(i).."", data=i} end
 local floodgridsizeoptions = {}
-for i=1,10 do floodgridsizeoptions[i] = {description=""..(i).."", data=i} end
+for i=0,10 do floodgridsizeoptions[i+1] = {description=""..(i).."", data=i} end
 local biggridsizeoptions = {}
-for i=1,5 do biggridsizeoptions[i] = {description=""..(i).."", data=i} end
+for i=0,5 do biggridsizeoptions[i+1] = {description=""..(i).."", data=i} end
 
 local KEY_A = 65
 local keyslist = {}
