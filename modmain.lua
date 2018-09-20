@@ -71,7 +71,7 @@ end
 
 local function GetKeyConfig(configname, default)
 	local value = GetModConfigData(configname)
-	if type(value) == "string" then
+	if type(value) == "string" and value:len() > 0 then
 		return value:lower():byte()
 	end
 	if type(value) ~= "number" then
@@ -81,9 +81,9 @@ local function GetKeyConfig(configname, default)
 end
 
 local CTRL = GetConfig("CTRL", false, "boolean")
-KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
-GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
-SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
+local KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
+local GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
+local SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
 local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
 
