@@ -135,7 +135,6 @@ local COLORTABLE = {
 	blackwhiteoutline = { badcolor = Vector3(l, l, l), goodcolor = Vector3(h, h, h), outline = true },
 }
 local COLORS = GetConfig("COLORS", "blackwhiteoutline", function(value)
-	print(COLORTABLE[nil])
 	return COLORTABLE[value] ~= nil
 end)
 local function SetColor(colorname)
@@ -395,7 +394,8 @@ function Placer:MakeGridInst()
 end
 
 function Placer:TestPoint(pt)
-	local canbuild = self.testfn == nil or self.testfn(pt, self._rot)
+	local canbuild = (self.testfn == nil or self.testfn(pt, self._rot))
+				 and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
 	return canbuild, canbuild and goodcolor or badcolor
 end
 
@@ -490,6 +490,18 @@ function Placer:RemoveGridPoint(bgx, bgz, to_move_list)
 	self.build_grid_positions[bgx][bgz] = nil
 end
 
+local allow_place_test = {
+	fish_farm_placer = true, -- adjusts animations and checks for nearby blocking structures
+	sprinkler_placer = true, -- tests for nearby water, but is super inefficient, we'll replace in PostInit
+	clawpalmtree_sapling_placer = true, -- tests for the correct ground; not sure this is even obtainable?
+	-- tar extractor is left out so that it uses the normal placer logic
+}
+
+local placers_with_radius = {
+	firesuppressor_placer = true,
+	sprinkler_placer = true,
+}
+
 local OldOnUpdate = Placer.OnUpdate
 function Placer:OnUpdate(dt)
 	local body_start = os.clock()
@@ -509,14 +521,25 @@ function Placer:OnUpdate(dt)
 		end
 		self.gridinst = self:MakeGridInst()
 	end
-	--#rezecib Restores the default game behavior by holding ctrl
-	if CTRL ~= TheInput:IsKeyDown(KEY_CTRL) then
+	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
+	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
+	local disabled_place_test = self.placeTestFn ~= nil and not allow_place_test[self.inst.prefab]
+	if ctrl_disable or disabled_place_test then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
 		self.gridinst:Hide()
 		self.inst:Show()
 		self:SetCursorVisibility(true)
-		return OldOnUpdate(self, dt)
+		local ret = OldOnUpdate(self, dt)
+		if not ctrl_disable then
+			-- if we got disabled by the placeTestFn, then still use the chosen color scheme
+			local color = self.can_build and goodcolor or badcolor
+			self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			for i, v in ipairs(self.linked) do
+				v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			end
+		end
+		return ret
 	end
 	if grid_dirty then
 		--Some settings have changed that will mess up the grid unless we rebuild it
@@ -628,10 +651,9 @@ function Placer:OnUpdate(dt)
 	end
 	
 	if self.testfn ~= nil then    
-		self.can_build, self.mouse_blocked = self.testfn(pt, self._rot)
+		self.can_build = self:TestPoint(pt, self._rot)
 	else
 		self.can_build = true
-		self.mouse_blocked = false
 	end
 	--#rezecib Not using mouse_blocked is intentional; it goes against the idea of trying
 	--			to carefully align the placement with the grid; it would get annoying
@@ -652,12 +674,12 @@ function Placer:OnUpdate(dt)
 	for i, v in ipairs(self.linked) do
 		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 	end
-	local firesuppressor = self.inst.prefab == "firesuppressor_placer"
-	if HIDEPLACER and not self.snap_to_tile and not firesuppressor then
+	local has_radius = placers_with_radius[self.inst.prefab]
+	if HIDEPLACER and not self.snap_to_tile and not has_radius then
 		self.gridinst:Show()
 		self.inst:Hide()
 	else
-		if firesuppressor then
+		if has_radius then
 			for i,v in ipairs(self.linked) do
 				if HIDEPLACER then
 					v:Hide()
@@ -803,6 +825,35 @@ function Placer:OnUpdate(dt)
 	self:RefreshBuildGrid(TIMEBUDGET and TIMEBUDGET - body_time)
 end
 
+
+-- The sprinkler's placeTestFn is atrociously inefficient (because it also gets used to place the pipes)
+-- Unfortunately it seems there's no better approach than just rewriting it, but this becomes technical debt :/
+local function sprinklerPlaceTestFn(inst, pt)
+	-- local cache of map for efficiency
+	local map = GLOBAL.GetWorld().Map
+	
+	local cx, cy = map:GetTileCoordsAtPoint(pt.x, 0, pt.z)
+	local center_tile = map:GetTile(cx, cy)
+	-- duplication of sprinkler.lua::IsValidSprinklerTile
+	local valid_sprinkler_tile = not map:IsWater(center_tile)
+								 and (center_tile ~= GLOBAL.GROUND.INVALID)
+								 and (center_tile ~= GLOBAL.GROUND.IMPASSIBLE)
+	-- fail immediately if we can't place on this ground
+	if not valid_sprinkler_tile then return false end
+
+	local range = 20
+	for x = pt.x - range, pt.x + range, 4 do
+		for z = pt.z - range, pt.z + range, 4 do
+			local tx, ty = map:GetTileCoordsAtPoint(x, 0, z)
+			if map:IsWater(map:GetTile(tx, ty)) then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
 -- But these things do need to get built every time
 local function PlacerPostInit(self)
 	--there's gotta be a better place to put this; also may not be necessary, but it's safe and cheap
@@ -826,8 +877,10 @@ local function PlacerPostInit(self)
 		GetPlayer().HUD.controls.groundactionhint:SetOffset(Vector3(0, 200, 0))
 	end
 
-	--keeps track of the build grid objects, indexed by lattice coordinates
+	--used in DST to track attachments to farm placers, telebase, etc;
+	-- set to empty list if not present for simpler logic
 	self.linked = self.linked or {}
+	--keeps track of the build grid objects, indexed by lattice coordinates
 	self.build_grid = nil
 	--keeps track of the build grid positions, indexed by lattice coordinates
 	self.build_grid_positions = nil 
@@ -849,6 +902,14 @@ local function PlacerPostInit(self)
 		if self.tileinst then self.tileinst:Remove() end
 		if self.gridinst then self.gridinst:Remove() end
 		if self.controller_child then self.controller_child:Remove() end
+	end)
+	
+	-- Delay to capture the prefab name
+	self.inst:DoTaskInTime(0, function()
+		local prefab = self.inst.prefab
+		if prefab == "sprinkler_placer" then
+			self.placeTestFn = sprinklerPlaceTestFn
+		end
 	end)
 end
 AddComponentPostInit("placer", PlacerPostInit)
