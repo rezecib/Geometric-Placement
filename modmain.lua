@@ -78,6 +78,7 @@ local function GetKeyConfig(configname, default)
 		PrintCorruptedConfig(configname, value)
 		return default:lower():byte()
 	end
+	return value
 end
 
 local CTRL = GetConfig("CTRL", false, "boolean")
