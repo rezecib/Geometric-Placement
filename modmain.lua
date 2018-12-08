@@ -495,6 +495,8 @@ local allow_place_test = {
 	fish_farm_placer = true, -- adjusts animations and checks for nearby blocking structures
 	sprinkler_placer = true, -- tests for nearby water, but is super inefficient, we'll replace in PostInit
 	clawpalmtree_sapling_placer = true, -- tests for the correct ground; not sure this is even obtainable?
+	slow_farmplot_placer = true, -- excludes interiors
+	fast_farmplot_placer = true, -- excludes interiors
 	-- tar extractor is left out so that it uses the normal placer logic
 }
 
