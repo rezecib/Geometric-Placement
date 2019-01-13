@@ -498,6 +498,8 @@ local allow_place_test = {
 	slow_farmplot_placer = true, -- excludes interiors
 	fast_farmplot_placer = true, -- excludes interiors
 	-- tar extractor is left out so that it uses the normal placer logic
+	fence_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
+	fence_gate_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
 }
 
 local placers_with_radius = {
