@@ -2,34 +2,28 @@ PrefabFiles = {
 	"buildgridplacer",
 }
 Assets = {
+	Asset("ANIM", "anim/gridplacer.zip"),
 	Asset("ANIM", "anim/buildgridplacer.zip"),
-	
-	--Geometry button icons
-	Asset( "IMAGE", "images/diamond_geometry.tex" ),
-	Asset( "ATLAS", "images/diamond_geometry.xml" ),
-	Asset( "IMAGE", "images/square_geometry.tex" ),
-	Asset( "ATLAS", "images/square_geometry.xml" ),
-	Asset( "IMAGE", "images/flat_hexagon_geometry.tex" ),
-	Asset( "ATLAS", "images/flat_hexagon_geometry.xml" ),
-	Asset( "IMAGE", "images/pointy_hexagon_geometry.tex" ),
-	Asset( "ATLAS", "images/pointy_hexagon_geometry.xml" ),
-	Asset( "IMAGE", "images/x_hexagon_geometry.tex" ),
-	Asset( "ATLAS", "images/x_hexagon_geometry.xml" ),
-	Asset( "IMAGE", "images/z_hexagon_geometry.tex" ),
-	Asset( "ATLAS", "images/z_hexagon_geometry.xml" ),
-	
-	--Toggle button icons
-	Asset( "IMAGE", "images/cursor_toggle_icon.tex" ),
-	Asset( "ATLAS", "images/cursor_toggle_icon.xml" ),
-	Asset( "IMAGE", "images/cursor_toggle_icon_num.tex" ),
-	Asset( "ATLAS", "images/cursor_toggle_icon_num.xml" ),
-	Asset( "IMAGE", "images/placer_toggle_icon.tex" ),
-	Asset( "ATLAS", "images/placer_toggle_icon.xml" ),
-	Asset( "IMAGE", "images/grid_toggle_icon.tex" ),
-	Asset( "ATLAS", "images/grid_toggle_icon.xml" ),
-	Asset( "IMAGE", "images/toggle_x_out.tex" ),
-	Asset( "ATLAS", "images/toggle_x_out.xml" ),
 }
+images_and_atlases = {
+	"cursor_toggle_icon",
+	"cursor_toggle_icon_num",
+	"placer_toggle_icon",
+	"grid_toggle_icon",
+	"hideblocked_toggle_icon_shown",
+	"hideblocked_toggle_icon_hidden",
+	"showtile_toggle_icon",
+	"gridoverlay_toggle_icon_over",
+	"gridoverlay_toggle_icon_under",
+	"toggle_x_out",
+}
+for _,geometry in pairs({"diamond", "square", "flat_hexagon", "pointy_hexagon", "x_hexagon", "z_hexagon"}) do
+	table.insert(images_and_atlases, geometry .. "_geometry")
+end
+for _,assetname in pairs(images_and_atlases) do
+	table.insert(Assets, Asset("IMAGE", "images/" .. assetname .. ".tex"))
+	table.insert(Assets, Asset("ATLAS", "images/" .. assetname .. ".xml"))
+end
 
 -- Thanks to simplex for this clever memoized DST check!
 local DST = GLOBAL.TheSim:GetGameID() == "DST"
@@ -148,6 +142,7 @@ end
 SetColor(COLORS)
 
 local HIDEBLOCKED = GetConfig("HIDEBLOCKED", false, "boolean")
+local GRIDOVERLAY = GetConfig("GRIDOVERLAY", true, "boolean")
 local SHOWTILE = GetConfig("SHOWTILE", false, "boolean")
 local function SetShowTile(showtile)
 	SHOWTILE = showtile
@@ -168,11 +163,11 @@ if REDUCECHESTSPACING then
 	treasurechestrecipe.min_spacing = treasurechestrecipe.min_spacing - 0.1
 end
 
-local ModSettings = nil
-if DST then
-	ModSettings = require("tools/modsettings")
-	ModSettings.AddSetting(modname, "SHOWTILE", SetShowTile)
-end
+-- local ModSettings = nil
+-- if DST then
+	-- ModSettings = require("tools/modsettings")
+	-- ModSettings.AddSetting(modname, "SHOWTILE", SetShowTile)
+-- end
 
 --[[ Coordinate Systems ]]--
 -- The idea of the geometries is that there's an abstract "lattice space", which is a normal grid.
@@ -420,9 +415,6 @@ end
 function Placer:BuildGridPoint(bgx, bgz, bgpt, bgp)
 	if bgp == nil then
 		bgp = SpawnPrefab(self.placertype)
-		if self.placertype == "gridplacer" then
-			bgp.AnimState:SetMultColour(.05, .05, .05, 0.05)
-		end
 		bgp.Transform:SetRotation(self.geometry.gridplacer_rotation)
 	end
 	self.build_grid[bgx][bgz] = bgp
@@ -449,39 +441,28 @@ function Placer:RefreshBuildGrid(time_remaining) --if not time_remaining, then c
 	end
 end
 
-if HIDEBLOCKED then
-	function Placer:RefreshGridPoint(bgx, bgz)
-		local row = self.build_grid[bgx]
-		if row == nil then return end
-		local bgp = row[bgz]
-		if bgp == nil then return end
-		local bgpt = self.build_grid_positions[bgx][bgz]
-		local can_build, color = self:TestPoint(bgpt)
+function Placer:RefreshGridPoint(bgx, bgz)
+	local row = self.build_grid[bgx]
+	if row == nil then return end
+	local bgp = row[bgz]
+	if bgp == nil then return end
+	local bgpt = self.build_grid_positions[bgx][bgz]
+	local can_build, color = self:TestPoint(bgpt)
+	if GRIDOVERLAY then
+		bgp.AnimState:SetSortOrder(can_build and 2 or 1)
+	end
+	if HIDEBLOCKED then
 		if can_build then
 			bgp:Show()
 		else
 			bgp:Hide()
 			return
 		end
-		if OUTLINE and self.placertype == "buildgridplacer" then
-			bgp.AnimState:PlayAnimation(can_build and "on" or "off", true)
-		else
-			bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
-		end
 	end
-else
-	function Placer:RefreshGridPoint(bgx, bgz)
-		local row = self.build_grid[bgx]
-		if row == nil then return end
-		local bgp = row[bgz]
-		if bgp == nil then return end
-		local bgpt = self.build_grid_positions[bgx][bgz]
-		local can_build, color = self:TestPoint(bgpt)
-		if OUTLINE and self.placertype == "buildgridplacer" then
-			bgp.AnimState:PlayAnimation(can_build and "on" or "off", true)
-		else
-			bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
-		end
+	if OUTLINE and (self.placertype == "buildgridplacer" or self.placertype == "gridplacer") then
+		bgp.AnimState:PlayAnimation(can_build and "on" or "off", true)
+	else
+		bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
 	end
 end
 
@@ -516,15 +497,26 @@ function Placer:OnUpdate(dt)
 		self.waiting_for_geometry = nil
 		if self.snap_to_tile then
 			self.placertype = "gridplacer"
-		elseif SHOWTILE then
-			self.tileinst = SpawnPrefab("gridplacer")
-			self.tileinst.AnimState:SetSortOrder(1)
 		end
 		if self.snap_to_meters or self.snap_to_flood or self.snap_to_tile then
 			self.snap_to_large = true
 			self.geometry = GEOMETRIES.SQUARE
 		end
 		self.gridinst = self:MakeGridInst()
+	end
+	if SHOWTILE and not self.snap_to_tile then
+		if self.tileinst == nil then
+			self.tileinst = SpawnPrefab("gridplacer")
+			self.tileinst.AnimState:SetSortOrder(3)
+			if OUTLINE then
+				self.tileinst.AnimState:PlayAnimation("off")
+			else
+				self.tileinst.AnimState:SetAddColour(badcolor.x, badcolor.y, badcolor.z, 0)
+			end
+		end
+	elseif self.tileinst ~= nil then
+		self.tileinst:Remove()
+		self.tileinst = nil
 	end
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
@@ -705,9 +697,6 @@ function Placer:OnUpdate(dt)
 	local lastpt = self.lastpt
 	self.lastpt = pt
 	local hadgrid = self.build_grid ~= nil
-	if self.placertype == "gridplacer" then
-		self.inst.AnimState:SetAddColour(1,1,1,0)
-	end
 	if not BUILDGRID then return end
 	if pt and pt.x and pt.z and not(hadgrid and lastpt and lastpt.x == pt.x and lastpt.z == pt.z) then
 		local grid_type = 1
@@ -1146,16 +1135,19 @@ local function PushOptionsScreen()
 			table.insert(settings, {name = v.name, label = v.label, options = v.options, default = v.default, saved = v.saved})
 		end
 		settings[namelookup.CTRL].saved = CTRL
-		settings[namelookup.BUILDGRID].saved = BUILDGRID
 		settings[namelookup.GEOMETRY].saved = GEOMETRY.name
-		settings[namelookup.TIMEBUDGET].saved = timebudget_percent
+		settings[namelookup.COLORS].saved = COLORS
+		settings[namelookup.BUILDGRID].saved = BUILDGRID
 		settings[namelookup.HIDEPLACER].saved = HIDEPLACER
 		settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
+		settings[namelookup.SHOWTILE].saved = SHOWTILE
+		settings[namelookup.HIDEBLOCKED].saved = HIDEBLOCKED
+		settings[namelookup.GRIDOVERLAY].saved = GRIDOVERLAY
+		settings[namelookup.TIMEBUDGET].saved = timebudget_percent
 		settings[namelookup.SMALLGRIDSIZE].saved = GRID_SIZES[1]
 		settings[namelookup.MEDGRIDSIZE].saved = GRID_SIZES[2]
 		settings[namelookup.FLOODGRIDSIZE].saved = GRID_SIZES[3]
 		settings[namelookup.BIGGRIDSIZE].saved = GRID_SIZES[4]
-		settings[namelookup.COLORS].saved = COLORS
 		--Note: don't need to include options that aren't in the menu,
 		-- because they're already in there from the options load above
 		GLOBAL.KnownModIndex:SaveConfigurationOptions(function() end, modname, settings, true)
@@ -1201,6 +1193,18 @@ local function PushOptionsScreen()
 	screen.callbacks.cursor = function(toggle)
 		HIDECURSOR = toggle ~= 2
 		HIDECURSORQUANTITY = toggle == 0
+	end
+	if not SHOWTILE then screen.showtile_button.onclick() end
+	screen.callbacks.showtile = function(toggle) SHOWTILE = toggle == 1 end
+	if HIDEBLOCKED then screen.hideblocked_button.onclick() end
+	screen.callbacks.hideblocked = function(toggle)
+		grid_dirty = true
+		HIDEBLOCKED = toggle == 0
+	end
+	if not GRIDOVERLAY then screen.gridoverlay_button.onclick() end
+	screen.callbacks.gridoverlay = function(toggle)
+		grid_dirty = true
+		GRIDOVERLAY = toggle == 1
 	end
 	screen.refresh:SetSelected(timebudget_percent)
 	screen.callbacks.refresh = SetTimeBudget

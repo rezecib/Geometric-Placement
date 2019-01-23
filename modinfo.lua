@@ -1,7 +1,7 @@
 name = "Geometric Placement"
 description = "Snaps objects to a grid when placing and displays a build grid around it (unless you hold ctrl)."
 author = "rezecib"
-version = "2.2.9" 
+version = "2.3.0" 
 
 forumthread = "/files/file/1108-geometric-placement/"
 
@@ -202,6 +202,16 @@ configuration_options =
 		hover = "With a controller, whether objects get placed\nright at your feet (\"off\") or at an offset (\"on\").",
 	},
 	{
+		name = "SHOWTILE",
+		label = "Show Nearest Tile",
+		options =	{
+						{description = "On", data = true},
+						{description = "Off", data = false},
+					},
+		default = false,	
+		hover = "When placing anything, shows the outline of the nearest tile.",
+	},
+	{
 		name = "HIDEBLOCKED",
 		label = "Hide Blocked Points",
 		options =	{
@@ -212,13 +222,13 @@ configuration_options =
 		hover = "Instead of showing red/black points for blocked locations, simply hides the points instead.",
 	},
 	{
-		name = "SHOWTILE",
-		label = "Show Nearest Tile",
+		name = "GRIDOVERLAY",
+		label = "Overlay Grid",
 		options =	{
 						{description = "On", data = true},
 						{description = "Off", data = false},
 					},
-		default = false,	
-		hover = "When placing anything, shows the outline of the nearest tile.",
+		default = true,	
+		hover = "Overlays the grid over everything else\n(otherwise, points behind a player or tree would be hidden).",
 	},
 }

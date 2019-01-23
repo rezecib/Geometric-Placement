@@ -85,32 +85,32 @@ local GeometricOptionsScreen = Class(Screen, function(self)
     self.subtitle_misc:SetColour(0,0,0,1)
 
     self.subtitle_refresh = self.proot:AddChild(Text(NEWFONT_SMALL, 22))
-    self.subtitle_refresh:SetPosition(160, -30, 0)
+    self.subtitle_refresh:SetPosition(160, -85, 0)
     self.subtitle_refresh:SetString("Refresh Speed:")
     self.subtitle_refresh:SetColour(0,0,0,1)
 
     self.subtitle_gridsize = self.proot:AddChild(Text(NEWFONT_SMALL, 22))
-    self.subtitle_gridsize:SetPosition(205, -80, 0)
+    self.subtitle_gridsize:SetPosition(205, -115, 0)
     self.subtitle_gridsize:SetString("Grid Sizes")
     self.subtitle_gridsize:SetColour(0,0,0,1)
 
     self.subtitle_gridsize1 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_gridsize1:SetPosition(125, -100, 0)
+    self.subtitle_gridsize1:SetPosition(125, -135, 0)
     self.subtitle_gridsize1:SetString("Fine")
     self.subtitle_gridsize1:SetColour(0,0,0,1)
 
     self.subtitle_gridsize2 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_gridsize2:SetPosition(178, -100, 0)
+    self.subtitle_gridsize2:SetPosition(178, -135, 0)
     self.subtitle_gridsize2:SetString("Wall")
     self.subtitle_gridsize2:SetColour(0,0,0,1)
 
     self.subtitle_gridsize3 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_gridsize3:SetPosition(231, -100, 0)
+    self.subtitle_gridsize3:SetPosition(231, -135, 0)
     self.subtitle_gridsize3:SetString("Sandbag")
     self.subtitle_gridsize3:SetColour(0,0,0,1)
 
     self.subtitle_gridsize4 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_gridsize4:SetPosition(284, -100, 0)
+    self.subtitle_gridsize4:SetPosition(284, -135, 0)
     self.subtitle_gridsize4:SetString("Turf")
     self.subtitle_gridsize4:SetColour(0,0,0,1)
 
@@ -221,38 +221,46 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.toggle_button:SetPosition(240, 135)
 	
 	local toggle_buttons = {
-		{name="grid", hover="Whether to show the build grid.", toggle=1},
-		{name="placer", hover="Whether to show the placer.\n(The ghost version of the thing you're placing)", toggle=1},
-		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2},
+		{name="grid", hover="Whether to show the build grid."},
+		{name="placer", hover="Whether to show the placer.\n(The ghost version of the thing you're placing)"},
+		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2, atlases={"", "", "_num"}},
+		{name="showtile", hover="Whether to show the nearest tile."},
+		{name="hideblocked", hover="Whether to show x's where you can't build\nor just hide them.",
+			atlases={"_hidden", "_shown"}, no_x=true},
+		{name="gridoverlay", hover="Whether to overlay the grid\n(show over existing objects, like trees).",
+			atlases={"_under", "_over"}, no_x=true},
 	}
+	local function GetAtlasAndTexture(name, atlases, toggle_state)
+		local suffix = atlases ~= nil and atlases[toggle_state+1] or ""
+		return "images/"..name.."_toggle_icon"..suffix..".xml", name.."_toggle_icon"..suffix..".tex"
+	end
 	for i,button in ipairs(toggle_buttons) do
 		local btn = button.name.."_button"
+		button.toggle = button.toggle or 1
 		button.toggle_states = button.toggle + 1
-		local atlas = "images/"..button.name.."_toggle_icon.xml"
-		local texture = button.name.."_toggle_icon.tex"
-		local alt_atlas = "images/"..button.name.."_toggle_icon"..(button.name == "cursor" and "_num" or "")..".xml"
-		local alt_texture = button.name.."_toggle_icon"..(button.name == "cursor" and "_num" or "")..".tex"
-		self[btn] = self.proot:AddChild(TEMPLATES.IconButton(atlas, texture, button.hover, false, false,
+		local initial_atlas, initial_texture = GetAtlasAndTexture(button.name, button.atlases, button.toggle)
+		self[btn] = self.proot:AddChild(TEMPLATES.IconButton(initial_atlas, initial_texture, button.hover, false, false,
 			function()
 				button.toggle = (button.toggle - 1)%button.toggle_states
 				if button.toggle == button.toggle_states-1 then
 					self[btn].xout:Hide()
 					self[btn].image:SetTint(.5, 1, .5, 1)
-					self[btn].icon:SetTexture(atlas, texture)
 				elseif button.toggle == 0 then
-					self[btn].xout:Show()
+					if not button.no_x then
+						self[btn].xout:Show()
+					end
 					self[btn].image:SetTint(1, .5, .5, 1)
-					self[btn].icon:SetTexture(atlas, texture)
 				else --only used by cursor button
 					self[btn].xout:Hide()
 					self[btn].image:SetTint(1, 1, .5, 1)
-					self[btn].icon:SetTexture(alt_atlas, alt_texture)
 				end
+				local atlas, texture = GetAtlasAndTexture(button.name, button.atlases, button.toggle)
+				self[btn].icon:SetTexture(atlas, texture)
 				self.callbacks[button.name](button.toggle)
 			end,
 			{offset_y=60}))
 		self[btn].icon:SetScale(.7)
-		self[btn]:SetPosition(85 + 60*i, 22)
+		self[btn]:SetPosition(145 + 60*((i-1)%3), 22 - 60*math.floor((i-1)/3))
 		self[btn].image:SetTint(.5, 1, .5, 1)
 		self[btn].xout = self[btn]:AddChild(Image("images/toggle_x_out.xml", "toggle_x_out.tex"))
 		self[btn].xout:SetScale(.8)
@@ -266,7 +274,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	percent_options[11] = {text = "Unlimited", data = false}
 	self.refresh = self.proot:AddChild(Spinner(percent_options, 100, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.refresh.OnChanged = function(_, data) self.callbacks.refresh(data) end
-	self.refresh:SetPosition(260, -30)
+	self.refresh:SetPosition(260, -85)
 	-- a little switcharoo to get the right parenting to happen in SetHoverText
 	local refreshtext = self.refresh.text
 	self.refresh.text = nil
@@ -277,24 +285,24 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 
 	local smallgridsizeoptions = {}
 	for i=0,10 do smallgridsizeoptions[i+1] = {text=""..(i*2).."", data=i*2} end
-	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
-	self.smallgrid:SetPosition(125, -120)
+	self.smallgrid:SetPosition(125, -155)
 	local medgridsizeoptions = {}
 	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
-	self.medgrid:SetPosition(178, -120)
+	self.medgrid:SetPosition(178, -155)
 	local floodgridsizeoptions = {}
 	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
-	self.floodgrid:SetPosition(231, -120)
+	self.floodgrid:SetPosition(231, -155)
 	local biggridsizeoptions = {}
 	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 60, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
+	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
 	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
-	self.biggrid:SetPosition(284, -120)
+	self.biggrid:SetPosition(284, -155)
 
 
 	--[[ Button Focus Hookups ]]--
@@ -379,24 +387,34 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	--Colors to misc
 	self.color_buttons.redgreen:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
 	self.grid_button:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redgreen)
-	self.color_buttons.redblue:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
-	self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redblue)
-	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
-	self.smallgrid:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhite)
+	self.color_buttons.redblue:SetFocusChangeDir(MOVE_RIGHT, self.showtile_button)
+	self.showtile_button:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redblue)
+	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
+	self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhite)
 	self.color_buttons.blackwhiteoutline:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
 	self.smallgrid:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhiteoutline)
 	
 	--Within misc
 	self.grid_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
 	self.grid_button:SetFocusChangeDir(MOVE_RIGHT, self.placer_button)
-	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.showtile_button)
 	self.placer_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
 	self.placer_button:SetFocusChangeDir(MOVE_LEFT, self.grid_button)
 	self.placer_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
-	self.placer_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.placer_button:SetFocusChangeDir(MOVE_DOWN, self.hideblocked_button)
 	self.cursor_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
 	self.cursor_button:SetFocusChangeDir(MOVE_LEFT, self.placer_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.gridoverlay_button)
+	self.showtile_button:SetFocusChangeDir(MOVE_UP, self.grid_button)
+	self.showtile_button:SetFocusChangeDir(MOVE_RIGHT, self.hideblocked_button)
+	self.showtile_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.hideblocked_button:SetFocusChangeDir(MOVE_UP, self.placer_button)
+	self.hideblocked_button:SetFocusChangeDir(MOVE_LEFT, self.showtile_button)
+	self.hideblocked_button:SetFocusChangeDir(MOVE_RIGHT, self.gridoverlay_button)
+	self.hideblocked_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.gridoverlay_button:SetFocusChangeDir(MOVE_UP, self.cursor_button)
+	self.gridoverlay_button:SetFocusChangeDir(MOVE_LEFT, self.hideblocked_button)
+	self.gridoverlay_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
 	self.refresh:SetFocusChangeDir(MOVE_UP, self.cursor_button)
 	self.refresh:SetFocusChangeDir(MOVE_DOWN, self.biggrid)
 	self.smallgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
