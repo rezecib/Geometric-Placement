@@ -163,11 +163,10 @@ if REDUCECHESTSPACING then
 	treasurechestrecipe.min_spacing = treasurechestrecipe.min_spacing - 0.1
 end
 
--- local ModSettings = nil
--- if DST then
-	-- ModSettings = require("tools/modsettings")
-	-- ModSettings.AddSetting(modname, "SHOWTILE", SetShowTile)
--- end
+local ModSettings = nil
+if DST then
+	ModSettings = require("tools/modsettings")
+end
 
 --[[ Coordinate Systems ]]--
 -- The idea of the geometries is that there's an abstract "lattice space", which is a normal grid.
