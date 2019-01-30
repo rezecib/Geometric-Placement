@@ -541,6 +541,10 @@ function Placer:OnUpdate(dt)
 		--Some settings have changed that will mess up the grid unless we rebuild it
 		self:RemoveBuildGrid()
 		self.geometry = self.snap_to_large and GEOMETRIES.SQUARE or GEOMETRY
+		if self.tileinst ~= nil then
+			self.tileinst:Remove()
+			self.tileinst = nil
+		end
 		grid_dirty = false
 	end
 	local pt = nil --#rezecib Added to keep the pt location for the build grid
