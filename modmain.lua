@@ -150,6 +150,7 @@ end
 
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
 local HIDECURSOR = GetConfig("HIDECURSOR", false, "boolean")
+local HIDECURSOR = GetConfig("HIDECURSOR", false, function(val) return type(val) == "boolean" or val == 1 end)
 local HIDECURSORQUANTITY = HIDECURSOR == 1
 local HIDECURSOR = HIDECURSOR ~= false
 local REDUCECHESTSPACING = GetConfig("REDUCECHESTSPACING", true, "boolean")
