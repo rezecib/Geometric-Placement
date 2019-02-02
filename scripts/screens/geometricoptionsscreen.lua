@@ -3,7 +3,7 @@ local Text = require "widgets/text"
 local Image = require "widgets/image"
 local UIAnim = require "widgets/uianim"
 local Widget = require "widgets/widget"
-local TEMPLATES = require "widgets/templates"
+local TEMPLATES = require "widgets/redux/templates"
 local Spinner = require "widgets/spinner"
 
 local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, outlined_anims)
@@ -38,115 +38,90 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.proot:SetScaleMode(SCALEMODE_PROPORTIONAL)
 
 	--throw up the background
-	self.bg = self.proot:AddChild(TEMPLATES.CurlyWindow(284, 288, 0.75, 0.75, 50, -31))
-    self.bg:SetPosition(-5,0)
-    self.bg.fill = self.proot:AddChild(Image("images/fepanel_fills.xml", "panel_fill_tiny.tex"))
-	self.bg.fill:SetSize(619, 359) -- defaults to 619, 359
-	self.bg.fill:SetPosition(2, 10)
-	
-	--title	
-    self.title = self.proot:AddChild(Text(BUTTONFONT, 50))
-    self.title:SetPosition(0, 135, 0)
-    self.title:SetString("Geometric Placement Options")
-    self.title:SetColour(0,0,0,1)
+	local close_button = {{text = STRINGS.UI.CONTROLSSCREEN.CLOSE, cb = function() self:Close() end}}
+	self.bg = self.proot:AddChild(TEMPLATES.RectangleWindow(619, 359, "Geometric Placement Options", close_button))
+	self.bg.title:SetPosition(0, -70)
 
 	--subtitles
-    self.subtitle_geometry = self.proot:AddChild(Text(NEWFONT_SMALL, 25))
-    self.subtitle_geometry:SetPosition(-205, 75, 0)
+    self.subtitle_geometry = self.proot:AddChild(Text(CHATFONT, 25))
+    self.subtitle_geometry:SetPosition(-205, 80, 0)
     self.subtitle_geometry:SetString("Geometry")
-    self.subtitle_geometry:SetColour(0,0,0,1)
+    self.subtitle_geometry:SetColour(UICOLOURS.GOLD)
 	
-    self.subtitle_geometry1 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_geometry1:SetPosition(-250, 40, 0)
+    self.subtitle_geometry1 = self.proot:AddChild(Text(CHATFONT, 18))
+    self.subtitle_geometry1:SetPosition(-250, 37, 0)
     self.subtitle_geometry1:SetString("Axis\nAligned")
-    self.subtitle_geometry1:SetColour(0,0,0,1)
+    self.subtitle_geometry1:SetColour(UICOLOURS.GOLD)
 	
-    self.subtitle_geometry2 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_geometry2:SetPosition(-160, 40, 0)
+    self.subtitle_geometry2 = self.proot:AddChild(Text(CHATFONT, 18))
+    self.subtitle_geometry2:SetPosition(-160, 37, 0)
     self.subtitle_geometry2:SetString("Default\nCamera")
-    self.subtitle_geometry2:SetColour(0,0,0,1)
+    self.subtitle_geometry2:SetColour(UICOLOURS.GOLD)
 	
-	self.vertical_line1 = self.proot:AddChild(Image("images/ui.xml", "line_vertical_5.tex"))
-	self.vertical_line1:SetScale(.7, .38)
-	self.vertical_line1:SetPosition(-100, -40)
-
-    self.subtitle_color = self.proot:AddChild(Text(NEWFONT_SMALL, 25))
-    self.subtitle_color:SetPosition(0, 75, 0)
+    self.subtitle_color = self.proot:AddChild(Text(CHATFONT, 25))
+    self.subtitle_color:SetPosition(0, 80, 0)
     self.subtitle_color:SetString("Colors")
-    self.subtitle_color:SetColour(0,0,0,1)
+    self.subtitle_color:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_color_good = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_good:SetPosition(-5, 40, 0)
-    self.subtitle_color_good:SetString("Unblocked")
-    self.subtitle_color_good:SetColour(0,0,0,1)
+    self.subtitle_color_good = self.proot:AddChild(Text(CHATFONT, 18))
+    self.subtitle_color_good:SetPosition(5, 40, 0)
+    self.subtitle_color_good:SetString("Open")
+    self.subtitle_color_good:SetColour(UICOLOURS.GOLD)
 	
-    self.subtitle_color_bad = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_bad:SetPosition(58, 40, 0)
+    self.subtitle_color_bad = self.proot:AddChild(Text(CHATFONT, 18))
+    self.subtitle_color_bad:SetPosition(60, 40, 0)
     self.subtitle_color_bad:SetString("Blocked")
-    self.subtitle_color_bad:SetColour(0,0,0,1)
+    self.subtitle_color_bad:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_color_gridpoint = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_gridpoint:SetPosition(-65, 11, 0)
-    self.subtitle_color_gridpoint:SetString("Fine/Wall:")
-    self.subtitle_color_gridpoint:SetColour(0,0,0,1)
-
-    self.subtitle_color_tile = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_tile:SetPosition(-50, -34, 0)
-    self.subtitle_color_tile:SetString("Turf:")
-    self.subtitle_color_tile:SetColour(0,0,0,1)
-
-    self.subtitle_color_placer = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_placer:SetPosition(-55, -79, 0)
-    self.subtitle_color_placer:SetString("Placer:")
-    self.subtitle_color_placer:SetColour(0,0,0,1)
-
-    self.subtitle_color_neartile = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
-    self.subtitle_color_neartile:SetPosition(-40, -124, 0)
-    self.subtitle_color_neartile:SetString("Nearest Tile:")
-    self.subtitle_color_neartile:SetColour(0,0,0,1)
-
-	self.vertical_line2 = self.proot:AddChild(Image("images/ui.xml", "line_vertical_5.tex"))
-	self.vertical_line2:SetScale(.7, .38)
-	self.vertical_line2:SetPosition(100, -40)
-
-    self.subtitle_misc = self.proot:AddChild(Text(NEWFONT_SMALL, 25))
-    self.subtitle_misc:SetPosition(205, 75, 0)
+    self.subtitle_misc = self.proot:AddChild(Text(CHATFONT, 25))
+    self.subtitle_misc:SetPosition(205, 80, 0)
     self.subtitle_misc:SetString("Other")
-    self.subtitle_misc:SetColour(0,0,0,1)
+    self.subtitle_misc:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_refresh = self.proot:AddChild(Text(NEWFONT_SMALL, 22))
-    self.subtitle_refresh:SetPosition(160, -60, 0)
-    self.subtitle_refresh:SetString("Refresh Speed:")
-    self.subtitle_refresh:SetColour(0,0,0,1)
-
-    self.subtitle_gridsize = self.proot:AddChild(Text(NEWFONT_SMALL, 22))
+    self.subtitle_gridsize = self.proot:AddChild(Text(CHATFONT, 22))
     self.subtitle_gridsize:SetPosition(205, -105, 0)
     self.subtitle_gridsize:SetString("Grid Sizes")
-    self.subtitle_gridsize:SetColour(0,0,0,1)
+    self.subtitle_gridsize:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_gridsize1 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
+    self.subtitle_gridsize1 = self.proot:AddChild(Text(CHATFONT, 18))
     self.subtitle_gridsize1:SetPosition(125, -125, 0)
     self.subtitle_gridsize1:SetString("Fine")
-    self.subtitle_gridsize1:SetColour(0,0,0,1)
+    self.subtitle_gridsize1:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_gridsize2 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
+    self.subtitle_gridsize2 = self.proot:AddChild(Text(CHATFONT, 18))
     self.subtitle_gridsize2:SetPosition(178, -125, 0)
     self.subtitle_gridsize2:SetString("Wall")
-    self.subtitle_gridsize2:SetColour(0,0,0,1)
+    self.subtitle_gridsize2:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_gridsize3 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
+    self.subtitle_gridsize3 = self.proot:AddChild(Text(CHATFONT, 18))
     self.subtitle_gridsize3:SetPosition(231, -125, 0)
     self.subtitle_gridsize3:SetString("Sandbag")
-    self.subtitle_gridsize3:SetColour(0,0,0,1)
+    self.subtitle_gridsize3:SetColour(UICOLOURS.GOLD)
 
-    self.subtitle_gridsize4 = self.proot:AddChild(Text(NEWFONT_SMALL, 18))
+    self.subtitle_gridsize4 = self.proot:AddChild(Text(CHATFONT, 18))
     self.subtitle_gridsize4:SetPosition(284, -125, 0)
     self.subtitle_gridsize4:SetString("Turf")
-    self.subtitle_gridsize4:SetColour(0,0,0,1)
+    self.subtitle_gridsize4:SetColour(UICOLOURS.GOLD)
 
-	self.horizontal_line = self.proot:AddChild(Image("images/ui.xml", "line_horizontal_6.tex"))
-	self.horizontal_line:SetScale(1.7, .38)
+	-- dividers
+	-- local r, g, b = unpack(UICOLOURS.GOLD)
+	
+	self.vertical_line1 = self.proot:AddChild(Image("images/global_redux.xml", "item_divider.tex"))
+	self.vertical_line1:SetRotation(90)
+	self.vertical_line1:SetScale(1, .32)
+	self.vertical_line1:SetPosition(-100, -40)
+	-- self.vertical_line1:SetTint(r,g,b,1)
+
+	self.vertical_line2 = self.proot:AddChild(Image("images/global_redux.xml", "item_divider.tex"))
+	self.vertical_line2:SetRotation(90)
+	self.vertical_line2:SetScale(1, .32)
+	self.vertical_line2:SetPosition(100, -40)
+	-- self.vertical_line2:SetTint(r,g,b,1)
+
+	self.horizontal_line = self.proot:AddChild(Image("images/global_redux.xml", "item_divider.tex"))
+	self.horizontal_line:SetScale(.8, 1)
 	self.horizontal_line:SetPosition(0, 60)
+	-- self.horizontal_line:SetTint(r,g,b,1)
 	
 	--[[  Color Spinners   ]]--
 	
@@ -181,24 +156,30 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	
 	self.color_spinners = {}
 	local _Spinner_SetSelectedIndex = Spinner.SetSelectedIndex
+	local color_type_descriptions = {"Fine/Wall:", "", "Turf:", "", "Placer:", "", "Nearest Tile:"}
 	for i, color_type in pairs({"GOOD", "BAD", "GOODTILE", "BADTILE", "GOODPLACER", "BADPLACER", "NEARTILE"}) do
-		local color_spinner = self.proot:AddChild(Spinner(
+		local neartile = color_type == "NEARTILE"
+		local color_spinner = self.proot:AddChild(TEMPLATES.LabelSpinner(
+			color_type_descriptions[i],
 			color_type:match("PLACER$") and placer_color_options or color_options,
-			60, 25,
-			{font=NEWFONT_OUTLINE, size=18},
-			false, nil, nil, true, nil, nil,
-			.76, .68
+			neartile and 100 or (i%2)*70, -- label width
+			60, -- spinner width
+			25, -- height
+			0,  -- spacing between label and spinner
+			nil, 18, -- font and size
+			0, -- horizontal offset
+			function(selected, old) self.callbacks.color(color_type, selected) end
 		))
-		color_spinner.OnChanged = function(_, data) self.callbacks.color(color_type, data) end
-		local pos_x = i%2 == 1 and -5 or 60
-		if color_type == "NEARTILE" then pos_x = 27.5 end
+		local pos_x = i%2 == 1 and -30 or 60
+		if neartile then pos_x = -17 end
 		color_spinner:SetPosition(pos_x, 55 - 45*math.ceil(i/2))
+		color_spinner = color_spinner.spinner
 		self.color_spinners[color_type] = color_spinner
 		color_spinner.anim = color_spinner:AddChild(UIAnim())
 		color_spinner.anim:GetAnimState():SetLightOverride(1)
 		color_spinner.anim:SetRotation(45)
 		color_spinner.anim:SetScale(.7)
-		color_spinner.anim:MoveToBack()
+		color_spinner.anim:SetClickable(false)
 		function color_spinner:SetSelectedIndex(idx)
 			self.updating = true
 			self.anim:GetAnimState():SetBuild("buildgridplacer")
@@ -249,10 +230,10 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 				end
 				self.callbacks.geometry(geometry_option)
 			end,
-			{offset_y=60}))
+			{offset_y = geometry.hover:match("\n") and 120 or 90}))
 		button.icon:SetScale(.7)
 		self.geometry_buttons[geometry_option:lower()] = button
-		button:SetPosition(((i+1)%2)*90-245, -10-math.floor((i-1)/2)*60)
+		button:SetPosition(((i+1)%2)*90-250, -10-math.floor((i-1)/2)*60)
 	end
 	
 	--[[   Misc Buttons   ]]--
@@ -271,11 +252,10 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 			self.toggle_button.hovertext:SetString(toggle_strings[toggle_state])
 			self.callbacks.toggle(toggle_state)
 		end,
-		{offset_y=60}))
+		{offset_y=90}))
 	self.toggle_button.icon:Hide()
 	self.toggle_button:SetTextSize(30)
 	self.toggle_button:SetText("On")
-	self.toggle_button.text:SetPosition(-3, 5)
 	self.toggle_button.image:SetTint(.5, 1, .5, 1)
 	self.toggle_button:SetPosition(240, 135)
 	
@@ -311,60 +291,61 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 				self[btn].icon:SetTexture(atlas, texture)
 				self.callbacks[button.name](button.toggle)
 			end,
-			{offset_y=60}))
+			{offset_y = button.hover:match("\n") and 120 or 90}))
 		self[btn].icon:SetScale(.7)
 		self[btn]:SetPosition(100 + 75*i, 10)
 		self[btn].image:SetTint(.5, 1, .5, 1)
 		self[btn].xout = self[btn]:AddChild(Image("images/toggle_x_out.xml", "toggle_x_out.tex"))
 		self[btn].xout:SetScale(.8)
-		self[btn].xout:SetPosition(-3,4)
 		self[btn].xout:Hide()
-		self[btn].highlight:MoveToFront() -- put it in front of the X
 	end
 	
 	local percent_options = {}
 	for i = 1, 10 do percent_options[i] = {text = i.."0%", data = i/10} end
 	percent_options[11] = {text = "Unlimited", data = false}
-	self.refresh = self.proot:AddChild(Spinner(percent_options, 100, 30, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
-	self.refresh.OnChanged = function(_, data) self.callbacks.refresh(data) end
-	self.refresh:SetPosition(260, -60)
+	self.refresh = self.proot:AddChild(TEMPLATES.LabelSpinner(
+			"Refresh Speed:",
+			percent_options,
+			100, -- label width
+			110, -- spinner width
+			30, -- height
+			0,  -- spacing between label and spinner
+			nil, 18, -- font and size
+			0, -- horizontal offset
+			function(selected, old) self.callbacks.refresh(selected) end
+		))
+	self.refresh:SetPosition(205, -60)
+	self.refresh = self.refresh.spinner
 	-- a little switcharoo to get the right parenting to happen in SetHoverText
 	local refreshtext = self.refresh.text
 	self.refresh.text = nil
 	self.refresh:SetHoverText(
 		"How quickly to refresh the grid.\nTurning it up will make it more responsive, but it may cause lag.",
-		{font = NEWFONT_OUTLINE, size = 22, offset_x = -4, offset_y = 45, colour = {1,1,1,1}})
+		{font = NEWFONT_OUTLINE, size = 22, offset_x = -4, offset_y = 120, colour = {1,1,1,1}})
 	self.refresh.text = refreshtext
 
 	local gridsize_y = -145
 	local smallgridsizeoptions = {}
 	for i=0,10 do smallgridsizeoptions[i+1] = {text=""..(i*2).."", data=i*2} end
-	self.smallgrid = self.proot:AddChild(Spinner(smallgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
-	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
+	self.smallgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(smallgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(1, selected) end))
 	self.smallgrid:SetPosition(125, gridsize_y)
 	local medgridsizeoptions = {}
 	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
-	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
+	self.medgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(medgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(2, selected) end))
 	self.medgrid:SetPosition(178, gridsize_y)
 	local floodgridsizeoptions = {}
 	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
-	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
+	self.floodgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(floodgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(3, selected) end))
 	self.floodgrid:SetPosition(231, gridsize_y)
 	local biggridsizeoptions = {}
 	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 50, 20, {font=NEWFONT_OUTLINE,size=18}, false, nil, nil, true, nil, nil, .76, .68))
-	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
+	self.biggrid = self.proot:AddChild(TEMPLATES.StandardSpinner(biggridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(4, selected) end))
 	self.biggrid:SetPosition(284, gridsize_y)
 
 
 	--[[ Button Focus Hookups ]]--
 	
-    if not TheInput:ControllerAttached() then
-        self.close_button = self.proot:AddChild(TEMPLATES.SmallButton("Close", 26, .5, function() self:Close() end))
-        self.close_button:SetPosition(0, -170)
-	else
+    if TheInput:ControllerAttached() then
 		self.last_focus = self.toggle_button
 		self.default_focus = self.toggle_button
 		self.current_focus = self.toggle_button
@@ -424,7 +405,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	--Geometry to colors
 	self.geometry_buttons.diamond:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.GOOD)
 	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
-	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
+	self.color_spinners.GOODTILE:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
 	self.geometry_buttons.flat_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.GOODPLACER)
 	self.color_spinners.GOODPLACER:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.flat_hexagon)
 	self.geometry_buttons.pointy_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.NEARTILE)
