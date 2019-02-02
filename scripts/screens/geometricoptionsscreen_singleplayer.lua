@@ -187,7 +187,7 @@ local TEMPLATES = {
 	end,
 }
 
-local GeometricOptionsScreen = Class(Screen, function(self)
+local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, outlined_anims)
 	Screen._ctor(self, "GeometricOptionsScreen")
 
 	self.active = true
@@ -248,6 +248,30 @@ local GeometricOptionsScreen = Class(Screen, function(self)
     self.subtitle_color:SetPosition(0, 75, 0)
     self.subtitle_color:SetString("Colors")
 
+    self.subtitle_color_good = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_good:SetPosition(-5, 40, 0)
+    self.subtitle_color_good:SetString("Unblocked")
+	
+    self.subtitle_color_bad = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_bad:SetPosition(58, 40, 0)
+    self.subtitle_color_bad:SetString("Blocked")
+
+    self.subtitle_color_gridpoint = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_gridpoint:SetPosition(-65, 11, 0)
+    self.subtitle_color_gridpoint:SetString("Fine/Wall:")
+
+    self.subtitle_color_tile = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_tile:SetPosition(-50, -34, 0)
+    self.subtitle_color_tile:SetString("Turf:")
+
+    self.subtitle_color_placer = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_placer:SetPosition(-55, -79, 0)
+    self.subtitle_color_placer:SetString("Placer:")
+
+    self.subtitle_color_neartile = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_color_neartile:SetPosition(-40, -124, 0)
+    self.subtitle_color_neartile:SetString("Nearest Tile:")
+
 	-- self.vertical_line2 = self.proot:AddChild(Image("images/ui.xml", "line_vertical_5.tex"))
 	-- self.vertical_line2:SetScale(.7, .38)
 	-- self.vertical_line2:SetPosition(100, -40)
@@ -257,73 +281,108 @@ local GeometricOptionsScreen = Class(Screen, function(self)
     self.subtitle_misc:SetString("Other")
 
     self.subtitle_refresh = self.proot:AddChild(Text(BUTTONFONT, 22))
-    self.subtitle_refresh:SetPosition(160, -85, 0)
+    self.subtitle_refresh:SetPosition(160, -60, 0)
     self.subtitle_refresh:SetString("Refresh Speed:")
 
     self.subtitle_gridsize = self.proot:AddChild(Text(BUTTONFONT, 22))
-    self.subtitle_gridsize:SetPosition(205, -115, 0)
+    self.subtitle_gridsize:SetPosition(205, -105, 0)
     self.subtitle_gridsize:SetString("Grid Sizes")
 
     self.subtitle_gridsize1 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize1:SetPosition(125, -135, 0)
+    self.subtitle_gridsize1:SetPosition(125, -125, 0)
     self.subtitle_gridsize1:SetString("Fine")
 
     self.subtitle_gridsize2 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize2:SetPosition(178, -135, 0)
+    self.subtitle_gridsize2:SetPosition(178, -125, 0)
     self.subtitle_gridsize2:SetString("Wall")
+	
     self.subtitle_gridsize3 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize3:SetPosition(231, -135, 0)
+    self.subtitle_gridsize3:SetPosition(231, -125, 0)
     self.subtitle_gridsize3:SetString("Sandbag")
+	
     self.subtitle_gridsize4 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize4:SetPosition(284, -135, 0)
+    self.subtitle_gridsize4:SetPosition(284, -125, 0)
     self.subtitle_gridsize4:SetString("Turf")
 
 	-- self.horizontal_line = self.proot:AddChild(Image("images/ui.xml", "line_horizontal_6.tex"))
 	-- self.horizontal_line:SetScale(1.7, .38)
 	-- self.horizontal_line:SetPosition(0, 60)
 	
-	--[[  Color Buttons   ]]--
+	--[[  Color Spinners   ]]--
 	
-	local colors = {"redgreen", "redblue", "blackwhite", "blackwhiteoutline"}
-	self.color_buttons = {
-		redgreen = { text = "Red/Green", hover = "The standard red and green that the normal game uses."},
-		redblue = { text = "Red/Blue", hover = "Substitutes blue in place of the green,\nhelpful for the red/green colorblind."},
-		blackwhite = { text = "Black/White", hover = "Black for blocked and white for placeable,\nusually more visible."},
-		blackwhiteoutline = { text = "Outlined", hover = "Black and white, but with outlines for improved visibility."},
+	local placer_colors = {"green", "blue", "red", "white", "black"}
+	local colors = {}
+	for _,color in ipairs(placer_colors) do
+		table.insert(colors, color)
+	end
+	table.insert(placer_colors, "hidden")
+	table.insert(colors, "hidden")
+	
+	-- Copy-pasted from modinfo for ease of use
+	local placer_color_options = {
+		{description = "Green", data = "green", hover = "The normal green  the game uses."},
+		{description = "Blue", data = "blue", hover = "Blue, helpful if you're red/green colorblind."},
+		{description = "Red", data = "red", hover = "The normal red the game uses."},
+		{description = "White", data = "white", hover = "A bright white, for better visibility."},
+		{description = "Black", data = "black", hover = "Black, to contrast with the brighter colors."},
 	}
-    local button_y = 20
-	for i, color_option in pairs(colors) do
-		local button_params = self.color_buttons[color_option]
-		local button = self.proot:AddChild(TEMPLATES.Button(button_params.text,
-			function()
-				for color_name,color_button in pairs(self.color_buttons) do
-					if color_name == color_option then
-						color_button:Disable()
-					else
-						color_button:Enable()
-					end
+	local color_options = {}
+	for i,option in ipairs(placer_color_options) do
+		color_options[i] = option
+	end
+	color_options[#color_options+1] = {description = "Outlined White", data = "whiteoutline", hover = "White with a black outline, for the best visibility."}
+	color_options[#color_options+1] = {description = "Outlined Black", data = "blackoutline", hover = "Black with a white outline, for the best visibility."}
+	local hidden_option = {description = "Hidden", data = "hidden", hover = "Hide it entirely, because you didn't need to see it anyway, right?"}
+	placer_color_options[#placer_color_options+1] = hidden_option
+	color_options[#color_options+1] = hidden_option
+	-- end modinfo copypaste
+	
+	hidden_option.text = "   hide"
+	
+	self.color_spinners = {}
+	local _Spinner_SetSelectedIndex = Spinner.SetSelectedIndex
+	for i, color_type in pairs({"GOOD", "BAD", "GOODTILE", "BADTILE", "GOODPLACER", "BADPLACER", "NEARTILE"}) do
+		local color_spinner = self.proot:AddChild(Spinner(
+			color_type:match("PLACER$") and placer_color_options or color_options,
+			120, 50,
+			{font=DEFAULTFONT, size=25},
+			false, nil, nil, true, nil, nil,
+			.76, .68
+		))
+		color_spinner.background.startcap:SetTint(128, 128, 128, 1)
+		color_spinner.background.endcap:SetTint(128, 128, 128, 1)
+		color_spinner.OnChanged = function(_, data) self.callbacks.color(color_type, data) end
+		local pos_x = i%2 == 1 and -5 or 60
+		if color_type == "NEARTILE" then pos_x = 27.5 end
+		color_spinner:SetPosition(pos_x, 55 - 45*math.ceil(i/2))
+		self.color_spinners[color_type] = color_spinner
+		color_spinner.anim = color_spinner:AddChild(UIAnim())
+		color_spinner.anim:GetAnimState():SetLightOverride(1)
+		color_spinner.anim:SetRotation(45)
+		color_spinner.anim:SetScale(.7)
+		color_spinner.anim:SetClickable(false)
+		function color_spinner:SetSelectedIndex(idx)
+			self.updating = true
+			self.anim:GetAnimState():SetBuild("buildgridplacer")
+			self.anim:GetAnimState():SetBank("buildgridplacer")
+			local color = self.options[idx].data
+			if color == "hidden" then
+				self.anim:Hide()
+			else
+				self.anim:Show()
+				if colorname_vectors[color] then
+					self.anim:GetAnimState():PlayAnimation("idle")
+					color = colorname_vectors[color]
+					self.anim:GetAnimState():SetMultColour(color.x, color.y, color.z, 1)
+				else
+					self.anim:GetAnimState():PlayAnimation(outlined_anims[color])
+					self.anim:GetAnimState():SetMultColour(1, 1, 1, 1)
 				end
-				self.callbacks.color(color_option)
-			end))
-		button:SetTextSize(35)
-		button:SetPosition(0, button_y)
-		button:SetScale(.7)
-		button.leftanim = button:AddChild(UIAnim())
-		button.leftanim:GetAnimState():SetBuild("buildgridplacer")
-		button.leftanim:GetAnimState():SetBank("buildgridplacer")
-		button.leftanim:GetAnimState():PlayAnimation("idle", true)
-		button.leftanim:GetAnimState():SetLightOverride(1)
-		button.leftanim:SetRotation(45)
-		button.leftanim:SetPosition(-90, 0)
-		button.rightanim = button:AddChild(UIAnim())
-		button.rightanim:GetAnimState():SetBuild("buildgridplacer")
-		button.rightanim:GetAnimState():SetBank("buildgridplacer")
-		button.rightanim:GetAnimState():PlayAnimation("idle", true)
-		button.rightanim:GetAnimState():SetLightOverride(1)
-		button.rightanim:SetRotation(45)
-		button.rightanim:SetPosition(80, 0)
-		button_y = button_y - 45
-		self.color_buttons[color_option] = button
+			end
+			_Spinner_SetSelectedIndex(self, idx)
+		end
+		color_spinner:SetTextColour(0,0,0,1)
+		color_spinner:SetScale(.6)
 	end
 	
 	--[[ Geometry Buttons ]]--
@@ -386,13 +445,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	
 	local toggle_buttons = {
 		{name="grid", hover="Whether to show the build grid."},
-		{name="placer", hover="Whether to show the placer.\n(The ghost version of the thing you're placing)"},
-		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2, atlases={"", "", "_num"}},
-		{name="showtile", hover="Whether to show the nearest tile."},
-		{name="hideblocked", hover="Whether to show x's where you can't build\nor just hide them.",
-			atlases={"_hidden", "_shown"}, no_x=true},
-		{name="gridoverlay", hover="Whether to overlay the grid\n(show over existing objects, like trees).",
-			atlases={"_under", "_over"}, no_x=true},
+		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2, atlases={"", "_num", ""}},
 	}
 	local function GetAtlasAndTexture(name, atlases, toggle_state)
 		local suffix = atlases ~= nil and atlases[toggle_state+1] or ""
@@ -424,7 +477,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 			end,
 			{offset_y=60}))
 		self[btn].icon:SetScale(.7)
-		self[btn]:SetPosition(145 + 60*((i-1)%3), 22 - 60*math.floor((i-1)/3))
+		self[btn]:SetPosition(100 + 75*i, 10)
 		self[btn].image:SetTint(.5, 1, .5, 1)
 		self[btn].xout = self[btn]:AddChild(Image("images/toggle_x_out.xml", "toggle_x_out.tex"))
 		self[btn].xout:SetScale(.8)
@@ -439,7 +492,7 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.refresh:SetTextColour(0,0,0,1)
 	self.refresh:SetScale(.6)
 	self.refresh.OnChanged = function(_, data) self.callbacks.refresh(data) end
-	self.refresh:SetPosition(260, -85)
+	self.refresh:SetPosition(260, -60)
 	local params = { font = BUTTONFONT, size = 22, offset_x = -4/.6, offset_y = 60/.6, colour = {0,0,0,1} }
 	AddHoverText(self.refresh, params, "How quickly to refresh the grid.\nTurning it up will make it more responsive, but it may cause lag.")
 	self.refresh.hovertext:SetScale(1/.6)
@@ -478,8 +531,8 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
 	self.biggrid:SetPosition(284, -155)
 
-
 	--[[ Button Focus Hookups ]]--
+	
     if not TheInput:ControllerAttached() then
         self.close_button = self.proot:AddChild(TEMPLATES.SmallButton("Close", 26, .5, function() self:Close() end))
         self.close_button:SetPosition(0, -170)
@@ -501,14 +554,14 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	for _,button in pairs(self.geometry_buttons) do
 		self.section_lookup[button] = 2
 	end
-	for _,button in pairs(self.color_buttons) do
-		self.section_lookup[button] = 3
+	for _,spinner in pairs(self.color_spinners) do
+		self.section_lookup[spinner] = 3
 	end
 	for _,button in pairs(toggle_buttons) do
 		self.section_lookup[self[button.name.."_button"]] = 4
 	end
 	-- Set up a table to know what button to focus when switching sections
-	self.section_mainbuttons = {self.toggle_button, self.geometry_buttons.square, self.color_buttons.redgreen, self.grid_button}
+	self.section_mainbuttons = {self.toggle_button, self.geometry_buttons.square, self.color_spinners.GOOD, self.grid_button}
 
 	for button,section in pairs(self.section_lookup) do
 		local OldSetFocus = button.SetFocus
@@ -541,54 +594,52 @@ local GeometricOptionsScreen = Class(Screen, function(self)
 	self.geometry_buttons.pointy_hexagon:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.z_hexagon)
 	
 	--Geometry to colors
-	self.geometry_buttons.flat_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_buttons.blackwhite)
-	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.flat_hexagon)
-	self.geometry_buttons.pointy_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_buttons.blackwhiteoutline)
-	self.color_buttons.blackwhiteoutline:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.pointy_hexagon)
-	self.geometry_buttons.diamond:SetFocusChangeDir(MOVE_RIGHT, self.color_buttons.redgreen)
-	self.color_buttons.redgreen:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
-	self.color_buttons.redblue:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
+	self.geometry_buttons.diamond:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.GOOD)
+	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
+	self.color_spinners.GOODTILE:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.diamond)
+	self.geometry_buttons.flat_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.GOODPLACER)
+	self.color_spinners.GOODPLACER:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.flat_hexagon)
+	self.geometry_buttons.pointy_hexagon:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.NEARTILE)
+	self.color_spinners.NEARTILE:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.pointy_hexagon)
 	
 	--Within colors
-	self.color_buttons.redgreen:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.color_buttons.redgreen:SetFocusChangeDir(MOVE_DOWN, self.color_buttons.redblue)
-	self.color_buttons.redblue:SetFocusChangeDir(MOVE_UP, self.color_buttons.redgreen)
-	self.color_buttons.redblue:SetFocusChangeDir(MOVE_DOWN, self.color_buttons.blackwhite)
-	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_UP, self.color_buttons.redblue)
-	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_DOWN, self.color_buttons.blackwhiteoutline)
-	self.color_buttons.blackwhiteoutline:SetFocusChangeDir(MOVE_UP, self.color_buttons.blackwhite)
+	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_UP, self.toggle_button)
+	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.BAD)
+	self.color_spinners.GOOD:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.GOODTILE)
+	self.color_spinners.BAD:SetFocusChangeDir(MOVE_UP, self.toggle_button)
+	self.color_spinners.BAD:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.GOOD)
+	self.color_spinners.BAD:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.BADTILE)
+	self.color_spinners.GOODTILE:SetFocusChangeDir(MOVE_UP, self.color_spinners.GOOD)
+	self.color_spinners.GOODTILE:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.BADTILE)
+	self.color_spinners.GOODTILE:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.GOODPLACER)
+	self.color_spinners.BADTILE:SetFocusChangeDir(MOVE_UP, self.color_spinners.BAD)
+	self.color_spinners.BADTILE:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.GOODTILE)
+	self.color_spinners.BADTILE:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.BADPLACER)
+	self.color_spinners.GOODPLACER:SetFocusChangeDir(MOVE_UP, self.color_spinners.GOODTILE)
+	self.color_spinners.GOODPLACER:SetFocusChangeDir(MOVE_RIGHT, self.color_spinners.BADPLACER)
+	self.color_spinners.GOODPLACER:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.NEARTILE)
+	self.color_spinners.BADPLACER:SetFocusChangeDir(MOVE_UP, self.color_spinners.BADTILE)
+	self.color_spinners.BADPLACER:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.GOODPLACER)
+	self.color_spinners.BADPLACER:SetFocusChangeDir(MOVE_DOWN, self.color_spinners.NEARTILE)
+	self.color_spinners.NEARTILE:SetFocusChangeDir(MOVE_UP, self.color_spinners.GOODPLACER)
 	
 	--Colors to misc
-	self.color_buttons.redgreen:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
-	self.grid_button:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redgreen)
-	self.color_buttons.redblue:SetFocusChangeDir(MOVE_RIGHT, self.showtile_button)
-	self.showtile_button:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redblue)
-	self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
-	self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhite)
-	self.color_buttons.blackwhiteoutline:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
-	self.smallgrid:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhiteoutline)
+	self.color_spinners.BAD:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
+	self.grid_button:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BAD)
+	self.color_spinners.BADTILE:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
+	self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BADTILE)
+	self.color_spinners.BADPLACER:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
+	self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BADPLACER)
+	self.color_spinners.NEARTILE:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
+	self.smallgrid:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.NEARTILE)
 	
 	--Within misc
 	self.grid_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.grid_button:SetFocusChangeDir(MOVE_RIGHT, self.placer_button)
-	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.showtile_button)
-	self.placer_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.placer_button:SetFocusChangeDir(MOVE_LEFT, self.grid_button)
-	self.placer_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
-	self.placer_button:SetFocusChangeDir(MOVE_DOWN, self.hideblocked_button)
+	self.grid_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
+	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
 	self.cursor_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_LEFT, self.placer_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.gridoverlay_button)
-	self.showtile_button:SetFocusChangeDir(MOVE_UP, self.grid_button)
-	self.showtile_button:SetFocusChangeDir(MOVE_RIGHT, self.hideblocked_button)
-	self.showtile_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.hideblocked_button:SetFocusChangeDir(MOVE_UP, self.placer_button)
-	self.hideblocked_button:SetFocusChangeDir(MOVE_LEFT, self.showtile_button)
-	self.hideblocked_button:SetFocusChangeDir(MOVE_RIGHT, self.gridoverlay_button)
-	self.hideblocked_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.gridoverlay_button:SetFocusChangeDir(MOVE_UP, self.cursor_button)
-	self.gridoverlay_button:SetFocusChangeDir(MOVE_LEFT, self.hideblocked_button)
-	self.gridoverlay_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+	self.cursor_button:SetFocusChangeDir(MOVE_LEFT, self.grid_button)
+	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
 	self.refresh:SetFocusChangeDir(MOVE_UP, self.cursor_button)
 	self.refresh:SetFocusChangeDir(MOVE_DOWN, self.biggrid)
 	self.smallgrid:SetFocusChangeDir(MOVE_UP, self.refresh)

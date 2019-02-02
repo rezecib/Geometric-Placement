@@ -8,13 +8,7 @@ Assets = {
 images_and_atlases = {
 	"cursor_toggle_icon",
 	"cursor_toggle_icon_num",
-	"placer_toggle_icon",
 	"grid_toggle_icon",
-	"hideblocked_toggle_icon_shown",
-	"hideblocked_toggle_icon_hidden",
-	"showtile_toggle_icon",
-	"gridoverlay_toggle_icon_over",
-	"gridoverlay_toggle_icon_under",
 	"toggle_x_out",
 }
 for _,geometry in pairs({"diamond", "square", "flat_hexagon", "pointy_hexagon", "x_hexagon", "z_hexagon"}) do
@@ -118,38 +112,50 @@ for i,grid_offset in pairs(GRID_OFFSETS) do
 	GRID_OFFSETS[i] = Vector3(grid_offset, 0, grid_offset)
 end
 
-local OUTLINE = false
-local goodcolor = nil
-local badcolor = nil
-local h = 1
-local l = 1/8
-local COLORTABLE = {
-	redgreen = { badcolor = Vector3(h, l, l), goodcolor = Vector3(l, h, l), outline = false },
-	redblue = {	badcolor = Vector3(h, l, l), goodcolor = Vector3(l, l, h), outline = false },
-	blackwhite = { badcolor = Vector3(l, l, l), goodcolor = Vector3(h, h, h), outline = false },
-	blackwhiteoutline = { badcolor = Vector3(l, l, l), goodcolor = Vector3(h, h, h), outline = true },
+local H = 1
+local L = 1/8
+local COLOR_OPTIONS = {
+	green = Vector3(L, H, L),
+	blue  = Vector3(L, L, H),
+	red   = Vector3(H, L, L),
+	white = Vector3(H, H, H),
+	black = Vector3(L, L, L),
 }
-local COLORS = GetConfig("COLORS", "blackwhiteoutline", function(value)
-	return COLORTABLE[value] ~= nil
-end)
-local function SetColor(colorname)
+local COLOR_OPTION_LOOKUP = {}
+for color_name, color_vector in pairs(COLOR_OPTIONS) do
+	COLOR_OPTION_LOOKUP[color_vector] = color_name
+end
+local OUTLINED_OPTIONS = {
+	whiteoutline = "on",
+	blackoutline = "off",
+}
+for color_name, color_anim in pairs(OUTLINED_OPTIONS) do
+	COLOR_OPTION_LOOKUP[color_anim] = color_name
+end
+local function check_color_fn(value)
+	return COLOR_OPTIONS[value] ~= nil or OUTLINED_OPTIONS[value] ~= nil or value == "hidden"
+end
+local function check_placer_color_fn(value)
+	return COLOR_OPTIONS[value] ~= nil or value == "hidden"
+end
+local COLORS = {
+	GOOD       = GetConfig("GOODCOLOR",       "whiteoutline", check_color_fn),
+	BAD        = GetConfig("BADCOLOR",        "blackoutline", check_color_fn),
+	NEARTILE   = GetConfig("NEARTILECOLOR",   "white",        check_color_fn),
+	GOODTILE   = GetConfig("GOODTILECOLOR",   "whiteoutline", check_color_fn),
+	BADTILE    = GetConfig("BADTILECOLOR",    "whiteoutline", check_color_fn),
+	-- We can't outline placers (or maybe science just hasn't caught up yet?)
+	GOODPLACER = GetConfig("GOODPLACERCOLOR", "white", check_placer_color_fn),
+	BADPLACER  = GetConfig("BADPLACERCOLOR",  "black", check_placer_color_fn),
+}
+local function SetColor(colortype, colorname)
 	grid_dirty = true
-	COLORS = colorname
-	goodcolor = COLORTABLE[colorname].goodcolor
-	badcolor = COLORTABLE[colorname].badcolor
-	OUTLINE = COLORTABLE[colorname].outline
+	COLORS[colortype] = COLOR_OPTIONS[colorname] or OUTLINED_OPTIONS[colorname] or colorname
 end
-SetColor(COLORS)
-
-local HIDEBLOCKED = GetConfig("HIDEBLOCKED", false, "boolean")
-local GRIDOVERLAY = GetConfig("GRIDOVERLAY", true, "boolean")
-local SHOWTILE = GetConfig("SHOWTILE", false, "boolean")
-local function SetShowTile(showtile)
-	SHOWTILE = showtile
+for colortype,colorname in pairs(COLORS) do
+	SetColor(colortype, colorname)
 end
 
-local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
-local HIDECURSOR = GetConfig("HIDECURSOR", false, "boolean")
 local HIDECURSOR = GetConfig("HIDECURSOR", false, function(val) return type(val) == "boolean" or val == 1 end)
 local HIDECURSORQUANTITY = HIDECURSOR == 1
 local HIDECURSOR = HIDECURSOR ~= false
@@ -392,7 +398,7 @@ end
 function Placer:TestPoint(pt)
 	local canbuild = (self.testfn == nil or self.testfn(pt, self._rot))
 				 and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
-	return canbuild, canbuild and goodcolor or badcolor
+	return canbuild
 end
 
 function Placer:RemoveBuildGrid()
@@ -447,22 +453,23 @@ function Placer:RefreshGridPoint(bgx, bgz)
 	local bgp = row[bgz]
 	if bgp == nil then return end
 	local bgpt = self.build_grid_positions[bgx][bgz]
-	local can_build, color = self:TestPoint(bgpt)
-	if GRIDOVERLAY then
-		bgp.AnimState:SetSortOrder(can_build and 2 or 1)
+	local can_build = self:TestPoint(bgpt)
+	local color = can_build and COLORS.GOOD or COLORS.BAD
+	if self.snap_to_tile then
+		color = can_build and COLORS.GOODTILE or COLORS.BADTILE
+		bgp.AnimState:SetSortOrder(can_build and 1 or 0)
 	end
-	if HIDEBLOCKED then
-		if can_build then
-			bgp:Show()
-		else
-			bgp:Hide()
-			return
-		end
-	end
-	if OUTLINE and (self.placertype == "buildgridplacer" or self.placertype == "gridplacer") then
-		bgp.AnimState:PlayAnimation(can_build and "on" or "off", true)
+	if color == "hidden" then
+		bgp:Hide()
 	else
-		bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
+		bgp:Show()
+		if color == "on" or color == "off" then
+			bgp.AnimState:PlayAnimation(color, true)
+			bgp.AnimState:SetAddColour(0, 0, 0, 0)
+		else
+			bgp.AnimState:PlayAnimation("anim", true)
+			bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
+		end
 	end
 end
 
@@ -504,14 +511,14 @@ function Placer:OnUpdate(dt)
 		end
 		self.gridinst = self:MakeGridInst()
 	end
-	if SHOWTILE and not self.snap_to_tile then
+	if COLORS.NEARTILE ~= "hidden" and not self.snap_to_tile then
 		if self.tileinst == nil then
 			self.tileinst = SpawnPrefab("gridplacer")
-			self.tileinst.AnimState:SetSortOrder(3)
-			if OUTLINE then
-				self.tileinst.AnimState:PlayAnimation("off")
+			self.tileinst.AnimState:SetSortOrder(1)
+			if COLORS.NEARTILE == "on" or COLORS.NEARTILE == "off" then
+				self.tileinst.AnimState:PlayAnimation(COLORS.NEARTILE)
 			else
-				self.tileinst.AnimState:SetAddColour(badcolor.x, badcolor.y, badcolor.z, 0)
+				self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 0)
 			end
 		end
 	elseif self.tileinst ~= nil then
@@ -530,10 +537,18 @@ function Placer:OnUpdate(dt)
 		local ret = OldOnUpdate(self, dt)
 		if not ctrl_disable then
 			-- if we got disabled by the placeTestFn, then still use the chosen color scheme
-			local color = self.can_build and goodcolor or badcolor
-			self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
-			for i, v in ipairs(self.linked) do
-				v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
+			if color == "hidden" then
+				self.inst:Hide()
+				for i, v in ipairs(self.linked) do
+					v:Hide()
+				end
+			else
+				self.inst:Show()
+				self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+				for i, v in ipairs(self.linked) do
+					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+				end
 			end
 		end
 		return ret
@@ -670,29 +685,26 @@ function Placer:OnUpdate(dt)
 	
 	--end of code that closely matches the normal Placer:OnUpdate
 	
-	local color = self.can_build and goodcolor or badcolor
-	self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
-	for i, v in ipairs(self.linked) do
-		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
-	end
-	local has_radius = placers_with_radius[self.inst.prefab]
-	if HIDEPLACER and not self.snap_to_tile and not has_radius then
+	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
+	if color == "hidden" and not has_radius then
 		self.gridinst:Show()
 		self.inst:Hide()
-	else
-		if has_radius then
-			for i,v in ipairs(self.linked) do
-				if HIDEPLACER then
-					v:Hide()
-				else
-					v:Show()
-				end
-			end
-		elseif not self.snap_to_tile then
-			self.gridinst:Hide()
+		for i, v in ipairs(self.linked) do
+			v:Hide()
 		end
+	else
 		self.inst:Show()
+		if self.snap_to_tile then
+			self.gridinst:Show()
+		else
+			self.gridinst:Hide()
+			self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			for i, v in ipairs(self.linked) do
+				v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			end
+		end
 	end
+	local has_radius = placers_with_radius[self.inst.prefab]
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
 		self:SetCursorVisibility(not HIDECURSOR)
 	end
@@ -1122,7 +1134,7 @@ local function PushOptionsScreen()
 		CTRL = not CTRL
 		return
 	end
-	local screen = GeometricOptionsScreen()
+	local screen = GeometricOptionsScreen(COLOR_OPTIONS, OUTLINED_OPTIONS)
 	if DST then
 		screen.IsOptionsMenuKey = IsKey.OptionsMenu
 	else
@@ -1140,13 +1152,11 @@ local function PushOptionsScreen()
 		end
 		settings[namelookup.CTRL].saved = CTRL
 		settings[namelookup.GEOMETRY].saved = GEOMETRY.name
-		settings[namelookup.COLORS].saved = COLORS
 		settings[namelookup.BUILDGRID].saved = BUILDGRID
-		settings[namelookup.HIDEPLACER].saved = HIDEPLACER
 		settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
-		settings[namelookup.SHOWTILE].saved = SHOWTILE
-		settings[namelookup.HIDEBLOCKED].saved = HIDEBLOCKED
-		settings[namelookup.GRIDOVERLAY].saved = GRIDOVERLAY
+		for color_type, color_option in pairs(COLORS) do
+			settings[namelookup[color_type .. "COLOR"]].saved = COLOR_OPTION_LOOKUP[color_option] or color_option
+		end
 		settings[namelookup.TIMEBUDGET].saved = timebudget_percent
 		settings[namelookup.SMALLGRIDSIZE].saved = GRID_SIZES[1]
 		settings[namelookup.MEDGRIDSIZE].saved = GRID_SIZES[2]
@@ -1170,45 +1180,19 @@ local function PushOptionsScreen()
 		end
 	end
 	screen.callbacks.color = SetColor
-	for name,button in pairs(screen.color_buttons) do
-		if name == COLORS then
-			if DST then button:Select() else button:Disable() end
-		else
-			if DST then button:Unselect() else button:Enable() end
-		end
-		local gc = COLORTABLE[name].goodcolor
-		local bc = COLORTABLE[name].badcolor
-		if COLORTABLE[name].outline then
-			button.leftanim:GetAnimState():PlayAnimation("off", true)
-			button.rightanim:GetAnimState():PlayAnimation("on", true)
-		else
-			button.leftanim:GetAnimState():SetMultColour( bc.x, bc.y, bc.z, 1)
-			button.rightanim:GetAnimState():SetMultColour(gc.x, gc.y, gc.z, 1)
-		end
+	for color_type, color_option in pairs(COLORS) do
+		local color_name = COLOR_OPTION_LOOKUP[color_option] or color_option
+		screen.color_spinners[color_type]:SetSelected(color_name)
 	end
 	if CTRL then screen.toggle_button.onclick() end
 	screen.callbacks.toggle = function(toggle) CTRL = not toggle end
 	if not BUILDGRID then screen.grid_button.onclick() end
 	screen.callbacks.grid = function(toggle) BUILDGRID = toggle == 1 end
-	if HIDEPLACER then screen.placer_button.onclick() end
-	screen.callbacks.placer = function(toggle) HIDEPLACER = toggle == 0 end
 	if HIDECURSOR then screen.cursor_button.onclick() end
 	if HIDECURSORQUANTITY then screen.cursor_button.onclick() end
 	screen.callbacks.cursor = function(toggle)
 		HIDECURSOR = toggle ~= 2
 		HIDECURSORQUANTITY = toggle == 0
-	end
-	if not SHOWTILE then screen.showtile_button.onclick() end
-	screen.callbacks.showtile = function(toggle) SHOWTILE = toggle == 1 end
-	if HIDEBLOCKED then screen.hideblocked_button.onclick() end
-	screen.callbacks.hideblocked = function(toggle)
-		grid_dirty = true
-		HIDEBLOCKED = toggle == 0
-	end
-	if not GRIDOVERLAY then screen.gridoverlay_button.onclick() end
-	screen.callbacks.gridoverlay = function(toggle)
-		grid_dirty = true
-		GRIDOVERLAY = toggle == 1
 	end
 	screen.refresh:SetSelected(timebudget_percent)
 	screen.callbacks.refresh = SetTimeBudget

@@ -51,6 +51,23 @@ for i = 1, 10 do
 end
 percent_options[11] = {description = "Unlimited", data = false}
 
+local placer_color_options = {
+	{description = "Green", data = "green", hover = "The normal green  the game uses."},
+	{description = "Blue", data = "blue", hover = "Blue, helpful if you're red/green colorblind."},
+	{description = "Red", data = "red", hover = "The normal red the game uses."},
+	{description = "White", data = "white", hover = "A bright white, for better visibility."},
+	{description = "Black", data = "black", hover = "Black, to contrast with the brighter colors."},
+}
+local color_options = {}
+for i = 1, #placer_color_options do
+	color_options[i] = placer_color_options[i]
+end
+color_options[#color_options+1] = {description = "Outlined White", data = "whiteoutline", hover = "White with a black outline, for the best visibility."}
+color_options[#color_options+1] = {description = "Outlined Black", data = "blackoutline", hover = "Black with a white outline, for the best visibility."}
+local hidden_option = {description = "Hidden", data = "hidden", hover = "Hide it entirely, because you didn't need to see it anyway, right?"}
+placer_color_options[#placer_color_options+1] = hidden_option
+color_options[#color_options+1] = hidden_option
+
 configuration_options =
 {
 	{
@@ -121,16 +138,6 @@ configuration_options =
 		hover = "How much of the available time to use for refreshing the grid.\nDisabling or setting too high will likely cause lag.",
 	},
 	{
-		name = "HIDEPLACER",
-		label = "Hide Placer",
-		options =	{
-						{description = "On", data = true},
-						{description = "Off", data = false},
-					},
-		default = false,	
-		hover = "Whether to hide the placer (the ghost version of the item you're placing).\nHiding it can help you see the grid better.",
-	},
-	{
 		name = "HIDECURSOR",
 		label = "Hide Cursor Item",
 		options =	{
@@ -170,16 +177,53 @@ configuration_options =
 		hover = "How big to make the grid for turf/pitchfork.",
 	},
 	{
-		name = "COLORS",
-		label = "Grid Colors",
-		options =	{
-						{description = "Red/Green", data = "redgreen", hover = "The standard red and green that the normal game uses."},
-						{description = "Red/Blue", data = "redblue", hover = "Substitutes blue in place of the green,\nhelpful for the red/green colorblind."},
-						{description = "Black/White", data = "blackwhite", hover = "Black for blocked and white for placeable,\nusually more visible."},
-						{description = "Outlined", data = "blackwhiteoutline", hover = "Black and white, but with outlines for improved visibility."},
-					},
-		default = "blackwhiteoutline",	
-		hover = "Alternate color schemes for the grid and placer, for improved visibility.",
+		name = "GOODCOLOR",
+		label = "Unblocked Color",
+		options = color_options,
+		default = "whiteoutline",	
+		hover = "The color to use for unblocked points, where you can place things.",
+	},
+	{
+		name = "BADCOLOR",
+		label = "Blocked Color",
+		options = color_options,
+		default = "blackoutline",	
+		hover = "The color to use for blocked points, where you cannot place things.",
+	},
+	{
+		name = "NEARTILECOLOR",
+		label = "Nearest Tile Color",
+		options = color_options,
+		default = "white",	
+		hover = "The color to use for the nearest tile outline.",
+	},
+	{
+		name = "GOODTILECOLOR",
+		label = "Unblocked Tile Color",
+		options = color_options,
+		default = "whiteoutline",	
+		hover = "The color to use for the turf tile grid, where you can place turf.",
+	},
+	{
+		name = "BADTILECOLOR",
+		label = "Blocked Tile Color",
+		options = color_options,
+		default = "blackoutline",	
+		hover = "The color to use for the turf tile grid, where you can't place turf.",
+	},
+	{
+		name = "GOODPLACERCOLOR",
+		label = "Unblocked Placer Color",
+		options = placer_color_options,
+		default = "white",	
+		hover = "The color to use for an unblocked placer\n(the \"shadow copy\" of the thing you're placing).",
+	},
+	{
+		name = "BADPLACERCOLOR",
+		label = "Blocked Placer Color",
+		options = placer_color_options,
+		default = "black",	
+		hover = "The color to use for a blocked placer\n(the \"shadow copy\" of the thing you're placing).",
 	},
 	{
 		name = "REDUCECHESTSPACING",
@@ -200,35 +244,5 @@ configuration_options =
 					},
 		default = false,	
 		hover = "With a controller, whether objects get placed\nright at your feet (\"off\") or at an offset (\"on\").",
-	},
-	{
-		name = "SHOWTILE",
-		label = "Show Nearest Tile",
-		options =	{
-						{description = "On", data = true},
-						{description = "Off", data = false},
-					},
-		default = false,	
-		hover = "When placing anything, shows the outline of the nearest tile.",
-	},
-	{
-		name = "HIDEBLOCKED",
-		label = "Hide Blocked Points",
-		options =	{
-						{description = "On", data = true},
-						{description = "Off", data = false},
-					},
-		default = false,	
-		hover = "Instead of showing red/black points for blocked locations, simply hides the points instead.",
-	},
-	{
-		name = "GRIDOVERLAY",
-		label = "Overlay Grid",
-		options =	{
-						{description = "On", data = true},
-						{description = "Off", data = false},
-					},
-		default = true,	
-		hover = "Overlays the grid over everything else\n(otherwise, points behind a player or tree would be hidden).",
 	},
 }
