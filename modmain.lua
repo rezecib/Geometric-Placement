@@ -1271,6 +1271,8 @@ TheInput:AddControlHandler(DST and
 	function(down)
 		-- In DST, only let them do it on the scoreboard screen
 		if not down and IsScoreboardScreen() then
+			local ss = GLOBAL.TheFrontEnd.screenstack
+			ss[#ss]:ClearFocus()
 			PushOptionsScreen()
 		end
 	end or function(down)
