@@ -119,7 +119,7 @@ local COLOR_OPTIONS = {
 	blue  = Vector3(L, L, H),
 	red   = Vector3(H, L, L),
 	white = Vector3(H, H, H),
-	black = Vector3(L, L, L),
+	black = Vector3(0, 0, 0),
 }
 local COLOR_OPTION_LOOKUP = {}
 for color_name, color_vector in pairs(COLOR_OPTIONS) do
