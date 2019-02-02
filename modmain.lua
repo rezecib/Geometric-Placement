@@ -1187,7 +1187,10 @@ local function PushOptionsScreen()
 	if CTRL then screen.toggle_button.onclick() end
 	screen.callbacks.toggle = function(toggle) CTRL = not toggle end
 	if not BUILDGRID then screen.grid_button.onclick() end
-	screen.callbacks.grid = function(toggle) BUILDGRID = toggle == 1 end
+	screen.callbacks.grid = function(toggle)
+		grid_dirty = true
+		BUILDGRID = toggle == 1
+	end
 	if HIDECURSOR then screen.cursor_button.onclick() end
 	if HIDECURSORQUANTITY then screen.cursor_button.onclick() end
 	screen.callbacks.cursor = function(toggle)
