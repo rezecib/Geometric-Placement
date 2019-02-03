@@ -315,6 +315,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 			function(selected, old) self.callbacks.refresh(selected) end
 		))
 	self.refresh:SetPosition(205, -60)
+	self.subtitle_refresh = self.refresh.label -- also needed for gross fix
 	self.refresh = self.refresh.spinner
 	-- a little switcharoo to get the right parenting to happen in SetHoverText
 	local refreshtext = self.refresh.text
@@ -461,6 +462,19 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.floodgrid:SetFocusChangeDir(MOVE_RIGHT, self.biggrid)
 	self.biggrid:SetFocusChangeDir(MOVE_UP, self.refresh)
 	self.biggrid:SetFocusChangeDir(MOVE_LEFT, self.floodgrid)
+	
+	-- Gross fix for terribly brittle code in "Chinese Plus" mod which tries to invasively rewrite the strings
+	self.title = self.bg.title
+	self.close_button = self.bg.actions.items[1]
+	self.placer_button = {SetHoverText = function() end}
+	self.color_buttons = {}
+	for _,c in pairs({"redgreen", "redblue", "blackwhite", "blackwhiteoutline"}) do
+		self.color_buttons[c] = {
+			SetText = function() end,
+			SetHoverText = function() end,
+		}
+	end
+	-- end gross fix
 	
 	TheInputProxy:SetCursorVisible(true)
 	self.default_focus = self.menu
