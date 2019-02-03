@@ -689,10 +689,13 @@ function Placer:OnUpdate(dt)
 	
 	--end of code that closely matches the normal Placer:OnUpdate
 	
+	local has_radius = placers_with_radius[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-	if color == "hidden" and not has_radius then
+	if color == "hidden" then
 		self.gridinst:Show()
-		self.inst:Hide()
+		if not has_radius then
+			self.inst:Hide()
+		end
 		for i, v in ipairs(self.linked) do
 			v:Hide()
 		end
@@ -712,7 +715,6 @@ function Placer:OnUpdate(dt)
 			end
 		end
 	end
-	local has_radius = placers_with_radius[self.inst.prefab]
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
 		self:SetCursorVisibility(not HIDECURSOR)
 	end
