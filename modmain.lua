@@ -545,8 +545,12 @@ function Placer:OnUpdate(dt)
 				end
 			else
 				self.inst:Show()
+				local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
+				self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
 				self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 				for i, v in ipairs(self.linked) do
+					v:Show()
+					v.AnimState:SetMultColour(mult, mult, mult, 1)
 					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 				end
 			end
@@ -698,8 +702,12 @@ function Placer:OnUpdate(dt)
 			self.gridinst:Show()
 		else
 			self.gridinst:Hide()
+			local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
+			self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
 			self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 			for i, v in ipairs(self.linked) do
+				v:Show()
+				v.AnimState:SetMultColour(mult, mult, mult, 1)
 				v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 			end
 		end
