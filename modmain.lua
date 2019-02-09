@@ -19,7 +19,6 @@ for _,assetname in pairs(images_and_atlases) do
 	table.insert(Assets, Asset("ATLAS", "images/" .. assetname .. ".xml"))
 end
 
--- Thanks to simplex for this clever memoized DST check!
 local DST = GLOBAL.TheSim:GetGameID() == "DST"
 
 --If this somehow gets enabled on the dedicated server, it can still refer to ThePlayer
@@ -489,6 +488,16 @@ local allow_place_test = {
 	fence_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
 	fence_gate_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
 }
+-- Veggie seeds for Wormwood, their test is just checking for natural turf
+AddPrefabPostInit("world", function()
+	local Prefabs = GLOBAL.Prefabs
+	for veggie,data in pairs(GLOBAL.VEGGIES) do
+		local seed_placer = veggie.."_seeds_placer"
+		if Prefabs[seed_placer] then
+			allow_place_test[seed_placer] = true
+		end
+	end
+end)
 
 local placers_with_radius = {
 	firesuppressor_placer = true,
