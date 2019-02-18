@@ -28,9 +28,13 @@ If you have the game on Steam, it's easiest to subscribe to the mod there. Other
 <tr><th>Wall Grid Size</th><td>The number of points in each direction that it uses for walls.</td></tr>
 <tr><th>Sandbag Grid Size</th><td>The number of points in each direction that it uses for sandbags.</td></tr>
 <tr><th>Turf Grid Size</th><td>The number of points in each direction that it uses for turf/pitchfork.</td></tr>
-<tr><th>Colors</th><td>Red/Green is the game's normal color scheme. Red/Blue should be more readable to players with red-green colorblindness. Black/White is there for fully colorblind players, or players who want the grid to be more readable at night. Outlined uses black and white with outlines to give the best visibility in all situations.</td></tr>
+<tr><th>Unblocked Color</th><td>The color to use for unblocked points, where you can place things.</td></tr>
+<tr><th>Blocked Color</th><td>The color to use for blocked points, where you cannot place things.</td></tr>
+<tr><th>Nearest Tile Color</th><td>The color to use for the outline of the nearest turf tile.</td></tr>
+<tr><th>Unblocked Tile Color</th><td>The color to use for the turf tile grid, where you can place turf.</td></tr>
+<tr><th>Blocked Tile Color</th><td>The color to use for the turf tile grid, where you cannot place turf.</td></tr>
+<tr><th>Unblocked Placer Color</th><td>The color to use for the placer (shadow copy of the thing you're placing), when you can place it.</td></tr>
+<tr><th>Blocked Placer Color</th><td>The color to use for the placer (shadow copy of the thing you're placing), when you cannot place it.</td></tr>
 <tr><th>Tighter Chests</th><td>Allows chests to be placed more closely together. This doesn't always work in DST. I keep this only as a legacy setting because the other geometry mods override a special case the game makes for chests.</td></tr>
 <tr><th>Controller Offset</th><td>Allows you to disable the usual offset that rotates around the player when placing objects. Defaults to off.</td></tr>
-<tr><th>Hide Blocked Points</th><td>Instead of showing red/black points where you can't place things, this can set it to hide those points instead.</td></tr>
-<tr><th>Show Nearest Tile</th><td>In addition to showing each of the points, this can set it to show the outline of the nearest tile, making it easier to align placement with the turf.</td></tr>
 </table>
