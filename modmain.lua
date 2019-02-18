@@ -6,10 +6,11 @@ Assets = {
 	Asset("ANIM", "anim/buildgridplacer.zip"),
 }
 images_and_atlases = {
+	"toggle_x_out",
+	"grid_toggle_icon",
 	"cursor_toggle_icon",
 	"cursor_toggle_icon_num",
-	"grid_toggle_icon",
-	"toggle_x_out",
+	"placer_toggle_icon",
 }
 for _,geometry in pairs({"diamond", "square", "flat_hexagon", "pointy_hexagon", "x_hexagon", "z_hexagon"}) do
 	table.insert(images_and_atlases, geometry .. "_geometry")
@@ -34,9 +35,10 @@ local TheCamera = nil--GLOBAL.TheCamera --need to populate this later in the pla
 local require = GLOBAL.require
 local unpack = GLOBAL.unpack
 local os = GLOBAL.os
+local string = GLOBAL.string
 local SpawnPrefab = GLOBAL.SpawnPrefab
 local GeometricOptionsScreen = DST and require("screens/geometricoptionsscreen")
-										or require("screens/geometricoptionsscreen_singleplayer")
+									or require("screens/geometricoptionsscreen_singleplayer")
 
 local function PrintCorruptedConfig(configname, badvalue)
 	print("WARNING: mod config value \"" .. configname .. "\" for mod \"" .. modname
@@ -73,6 +75,7 @@ local KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
 local GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
 local SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
 local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
+local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
 local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
 
 local TIMEBUDGET = GetConfig("TIMEBUDGET", 0.1, function(value)
@@ -147,8 +150,16 @@ local COLORS = {
 	GOODPLACER = GetConfig("GOODPLACERCOLOR", "white", check_placer_color_fn),
 	BADPLACER  = GetConfig("BADPLACERCOLOR",  "black", check_placer_color_fn),
 }
+local function ResolveColor(colortype, colorname)
+	-- Placers can't be outlined, so downgrade this to the un-outlined version
+	if colortype:match("PLACER$") and colorname:match("outline$") then
+		colorname = colorname:sub(1, colorname:len() - string.len("outline"))
+	end
+	return colorname
+end
 local function SetColor(colortype, colorname)
 	grid_dirty = true
+	colorname = ResolveColor(colortype, colorname)
 	COLORS[colortype] = COLOR_OPTIONS[colorname] or OUTLINED_OPTIONS[colorname] or colorname
 end
 for colortype,colorname in pairs(COLORS) do
@@ -547,7 +558,7 @@ function Placer:OnUpdate(dt)
 		if not ctrl_disable then
 			-- if we got disabled by the placeTestFn, then still use the chosen color scheme
 			local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-			if color == "hidden" then
+			if HIDEPLACER or color == "hidden" then
 				self.inst:Hide()
 				for i, v in ipairs(self.linked) do
 					v:Hide()
@@ -700,7 +711,7 @@ function Placer:OnUpdate(dt)
 	
 	local has_radius = placers_with_radius[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-	if color == "hidden" then
+	if HIDEPLACER or color == "hidden" then
 		self.gridinst:Show()
 		if not has_radius then
 			self.inst:Hide()
@@ -1145,6 +1156,30 @@ local function IsScoreboardScreen()
 	return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
 end
 
+local COLOR_PRESETS = {
+	redgreen			= {bad = "red",				good = "green"},
+	redblue				= {bad = "red",				good = "blue"},
+	blackwhite			= {bad = "black",			good = "white"},
+	blackwhiteoutline	= {bad = "blackoutline",	good = "whiteoutline"},
+}
+local COLOR_PRESET_LOOKUP = {}
+local color_type_ordering = {"GOOD", "BAD", "GOODTILE", "BADTILE", "GOODPLACER", "BADPLACER"}
+for color_preset_name, color_preset in pairs(COLOR_PRESETS) do
+	local preset_comparison_string = ""
+	for _, color_type in ipairs(color_type_ordering) do
+		local color_option = color_type:match("^GOOD") and "good" or "bad"
+		preset_comparison_string = preset_comparison_string .. ResolveColor(color_type, color_preset[color_option])
+	end
+	COLOR_PRESET_LOOKUP[preset_comparison_string] = color_preset_name
+end
+local function get_preset_comparison_string()
+	local preset_comparison_string = ""
+	for _, color_type in ipairs(color_type_ordering) do
+		local color = COLORS[color_type]
+		preset_comparison_string = preset_comparison_string .. (COLOR_OPTION_LOOKUP[color] or color)
+	end
+	return preset_comparison_string
+end
 local IsKey = {}
 local ignore_key = false
 local function set_ignore() ignore_key = true end
@@ -1172,6 +1207,7 @@ local function PushOptionsScreen()
 		settings[namelookup.CTRL].saved = CTRL
 		settings[namelookup.GEOMETRY].saved = GEOMETRY.name
 		settings[namelookup.BUILDGRID].saved = BUILDGRID
+		settings[namelookup.HIDEPLACER].saved = HIDEPLACER
 		settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
 		for color_type, color_option in pairs(COLORS) do
 			settings[namelookup[color_type .. "COLOR"]].saved = COLOR_OPTION_LOOKUP[color_option] or color_option
@@ -1199,10 +1235,21 @@ local function PushOptionsScreen()
 		end
 	end
 	screen.callbacks.color = SetColor
-	for color_type, color_option in pairs(COLORS) do
-		local color_name = COLOR_OPTION_LOOKUP[color_option] or color_option
-		screen.color_spinners[color_type]:SetSelected(color_name)
+	local function update_color_spinners_buttons()
+		for color_type, color_option in pairs(COLORS) do
+			local color_name = COLOR_OPTION_LOOKUP[color_option] or color_option
+			screen.color_spinners[color_type]:SetSelected(color_name)
+		end
+		for _, button in pairs(screen.color_buttons) do
+			if DST then button:Unselect() else button:Enable() end
+		end
+		local preset = COLOR_PRESET_LOOKUP[get_preset_comparison_string()]
+		if preset then
+			if DST then screen.color_buttons[preset]:Select() else screen.color_buttons[preset]:Disable() end
+		end
 	end
+	update_color_spinners_buttons()
+	screen.callbacks.color_update = update_color_spinners_buttons
 	if CTRL then screen.toggle_button.onclick() end
 	screen.callbacks.toggle = function(toggle) CTRL = not toggle end
 	if not BUILDGRID then screen.grid_button.onclick() end
@@ -1210,6 +1257,8 @@ local function PushOptionsScreen()
 		grid_dirty = true
 		BUILDGRID = toggle == 1
 	end
+	if HIDEPLACER then screen.placer_button.onclick() end
+	screen.callbacks.placer = function(toggle) HIDEPLACER = toggle == 0 end
 	if HIDECURSOR then screen.cursor_button.onclick() end
 	if HIDECURSORQUANTITY then screen.cursor_button.onclick() end
 	screen.callbacks.cursor = function(toggle)

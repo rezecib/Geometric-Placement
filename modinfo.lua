@@ -138,6 +138,16 @@ configuration_options =
 		hover = "How much of the available time to use for refreshing the grid.\nDisabling or setting too high will likely cause lag.",
 	},
 	{
+		name = "HIDEPLACER",
+		label = "Hide Placer",
+		options =	{
+						{description = "On", data = true},
+						{description = "Off", data = false},
+					},
+		default = false,	
+		hover = "Whether to hide the placer (the ghost version of the item you're placing).\nHiding it can help you see the grid better.",
+	},
+	{
 		name = "HIDECURSOR",
 		label = "Hide Cursor Item",
 		options =	{
