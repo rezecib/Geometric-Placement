@@ -406,9 +406,8 @@ function Placer:MakeGridInst()
 end
 
 function Placer:TestPoint(pt)
-	local canbuild = (self.testfn == nil or self.testfn(pt, self._rot))
-				 and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
-	return canbuild
+	return (self.testfn == nil or self.testfn(pt, self._rot))
+	   and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
 end
 
 function Placer:RemoveBuildGrid()
