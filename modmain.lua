@@ -488,23 +488,36 @@ function Placer:RemoveGridPoint(bgx, bgz, to_move_list)
 	self.build_grid_positions[bgx][bgz] = nil
 end
 
+-- Placers here will run the placeTestFn for each point
+-- Otherwise, placeTestFn makes it default to non-mod behavior (like holding ctrl)
 local allow_place_test = {
 	fish_farm_placer = true, -- adjusts animations and checks for nearby blocking structures
 	sprinkler_placer = true, -- tests for nearby water, but is super inefficient, we'll replace in PostInit
 	clawpalmtree_sapling_placer = true, -- tests for the correct ground; not sure this is even obtainable?
 	slow_farmplot_placer = true, -- excludes interiors
 	fast_farmplot_placer = true, -- excludes interiors
+	
+	-- These ones only really need to run on the actual placer, not the grid points
+	-- but I haven't implemented separate logic for that yet (may not be worth it)
+	fence_item_placer = true, -- just adjusts the orientation
+	fence_gate_item_placer = true, -- just adjusts the orientation
+	pighouse_city_placer = true, -- just hides some AnimState symbols
+	
 	-- tar extractor is left out so that it uses the normal placer logic
-	fence_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
-	fence_gate_item_placer = true, -- just adjusts the orientation... but should really only run on the placer itself, not grid points
 }
--- Veggie seeds for Wormwood, their test is just checking for natural turf
 AddPrefabPostInit("world", function()
 	local Prefabs = GLOBAL.Prefabs
+	-- Veggie seeds for Wormwood, their test is just checking for natural turf
 	for veggie,data in pairs(GLOBAL.VEGGIES) do
 		local seed_placer = veggie.."_seeds_placer"
 		if Prefabs[seed_placer] then
 			allow_place_test[seed_placer] = true
+		end
+	end
+	-- Pig shops in Hamlet, their test just hides some AnimState symbols; could be put in placer-only logic when it exists
+	for prefab, _ in pairs(Prefabs) do
+		if type(prefab) == "string" and prefab:match("^pig_shop") and prefab:match("_placer$") then
+			allow_place_test[prefab] = true
 		end
 	end
 end)
