@@ -685,6 +685,7 @@ function Placer:OnUpdate(dt)
 	--#rezecib swapped the line above for the two lines below; this is mainly to ensure that when
 	-- the playercontroller uses the inst to get the position, it has the right position
 	self.inst.Transform:SetPosition(pt:Get())
+	self.targetPos = self.inst:GetPosition()
 	self.gridinst.Transform:SetPosition(pt:Get())
 	if self.tileinst then self.tileinst.Transform:SetPosition(TheWorld.Map:GetTileCenterPoint(pt:Get())) end
 	
