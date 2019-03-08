@@ -732,8 +732,10 @@ function Placer:OnUpdate(dt)
 	local should_hide = (HIDEPLACER or color == "hidden")
 	local hide = should_hide and "Hide" or "Show"
 	local show = should_hide and "Show" or "Hide"
-	self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
-	self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+	if type(color) == "table" then
+		self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
+		self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+	end
 	if has_radius then
 		-- placers with a radius have the radius as the main placer,
 		-- and the actual object placer as the first linked entity;
@@ -756,8 +758,10 @@ function Placer:OnUpdate(dt)
 		else
 			v[hide](v)
 		end
-		v.AnimState:SetMultColour(mult, mult, mult, 1)
-		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+		if type(color) == "table" then
+			v.AnimState:SetMultColour(mult, mult, mult, 1)
+			v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+		end
 	end
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
 		self:SetCursorVisibility(not HIDECURSOR)
