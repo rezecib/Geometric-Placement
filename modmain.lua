@@ -525,6 +525,10 @@ end)
 local placers_with_radius = {
 	firesuppressor_placer = true,
 	sprinkler_placer = true,
+	winona_battery_low_placer = true,
+	winona_battery_high_placer = true,
+	winona_catapult_placer = true,
+	winona_spotlight_placer = true,
 }
 
 local OldOnUpdate = Placer.OnUpdate
@@ -717,36 +721,43 @@ function Placer:OnUpdate(dt)
 	if type(GLOBAL.rawget(GLOBAL, "TriggerDeployHelpers")) == "function" then
 		--#rezecib This seems to be specific to showing the range of nearby flingomatics
 		local x, y, z = self.inst.Transform:GetWorldPosition()
-		GLOBAL.TriggerDeployHelpers(x, y, z, 64)
+		GLOBAL.TriggerDeployHelpers(x, y, z, 64, self.recipe, self.inst)
 	end
 	
 	--end of code that closely matches the normal Placer:OnUpdate
 	
 	local has_radius = placers_with_radius[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-	if HIDEPLACER or color == "hidden" then
-		self.gridinst:Show()
-		if not has_radius then
-			self.inst:Hide()
-		end
-		for i, v in ipairs(self.linked) do
-			v:Hide()
-		end
-	else
+	local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
+	local should_hide = (HIDEPLACER or color == "hidden")
+	local hide = should_hide and "Hide" or "Show"
+	local show = should_hide and "Show" or "Hide"
+	self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
+	self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+	if has_radius then
+		-- placers with a radius have the radius as the main placer,
+		-- and the actual object placer as the first linked entity;
+		-- so we always show them
 		self.inst:Show()
-		if self.snap_to_tile then
-			self.gridinst:Show()
+	else
+		self.inst[hide](self.inst)
+	end
+	if self.snap_to_tile then
+		-- Always show gridinst for tiles, because it helps show which is selected
+		self.gridinst:Show()
+	else
+		-- Do the opposite for the gridinst, which indicates the selected point if there is no main placer
+		self.gridinst[show](self.gridinst)
+	end
+	for i, v in ipairs(self.linked) do
+		if i == 1 and self.showFirstLinked then
+			-- Winona's objects have a linked radius that is important to see
+			v:Show()
 		else
-			self.gridinst:Hide()
-			local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
-			self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
-			self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
-			for i, v in ipairs(self.linked) do
-				v:Show()
-				v.AnimState:SetMultColour(mult, mult, mult, 1)
-				v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
-			end
+			v[hide](v)
 		end
+		v.AnimState:SetMultColour(mult, mult, mult, 1)
+		v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
 	end
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
 		self:SetCursorVisibility(not HIDECURSOR)
@@ -962,6 +973,9 @@ local function PlacerPostInit(self)
 		local prefab = self.inst.prefab
 		if prefab == "sprinkler_placer" then
 			self.placeTestFn = sprinklerPlaceTestFn
+		end
+		if prefab == "winona_spotlight_placer" or prefab == "winona_catapult_placer" then
+			self.showFirstLinked = true
 		end
 	end)
 end
