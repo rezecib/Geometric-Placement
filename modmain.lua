@@ -488,6 +488,19 @@ function Placer:RemoveGridPoint(bgx, bgz, to_move_list)
 	self.build_grid_positions[bgx][bgz] = nil
 end
 
+local OldSetBuilder = Placer.SetBuilder
+function Placer:SetBuilder(...)
+	local ret = OldSetBuilder(self, ...)
+	if self.invobject and
+	   self.invobject.components.deployable and
+	   self.invobject.components.deployable.onlydeploybyplantkin and
+	   self.builder and
+	   not self.builder:HasTag("plantkin") then
+		self.disabled = true
+	end
+	return ret
+end
+
 -- Placers here will run the placeTestFn for each point
 -- Otherwise, placeTestFn makes it default to non-mod behavior (like holding ctrl)
 local allow_place_test = {
@@ -564,7 +577,7 @@ function Placer:OnUpdate(dt)
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
 	local disabled_place_test = self.placeTestFn ~= nil and not allow_place_test[self.inst.prefab]
-	if ctrl_disable or disabled_place_test then
+	if ctrl_disable or disabled_place_test or self.disabled then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
 		self.gridinst:Hide()
