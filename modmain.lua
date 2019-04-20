@@ -2,7 +2,7 @@ PrefabFiles = {
 	"buildgridplacer",
 }
 Assets = {
-	Asset("ANIM", "anim/gridplacer.zip"),
+	Asset("ANIM", "anim/geo_gridplacer.zip"),
 	Asset("ANIM", "anim/buildgridplacer.zip"),
 }
 images_and_atlases = {
@@ -563,12 +563,14 @@ function Placer:OnUpdate(dt)
 	if COLORS.NEARTILE ~= "hidden" and not self.snap_to_tile then
 		if self.tileinst == nil then
 			self.tileinst = SpawnPrefab("gridplacer")
-			self.tileinst.AnimState:SetSortOrder(1)
-			if COLORS.NEARTILE == "on" or COLORS.NEARTILE == "off" then
-				self.tileinst.AnimState:PlayAnimation(COLORS.NEARTILE)
-			else
-				self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 1)
-			end
+			self.tileinst:DoTaskInTime(0, function()
+				self.tileinst.AnimState:SetSortOrder(1)
+				if type(COLORS.NEARTILE) == "table" then
+					self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 1)
+				else
+					self.tileinst.AnimState:PlayAnimation(COLORS.NEARTILE)
+				end
+			end)
 		end
 	elseif self.tileinst ~= nil then
 		self.tileinst:Remove()
@@ -1158,6 +1160,13 @@ end
 if DST then
 	AddClassPostConstruct("components/inventoryitem_replica", InventoryItemReplicaPostConstruct)
 end
+
+-- Replace gridplacer anim without replacing the file directly
+AddPrefabPostInit("gridplacer", function(inst)
+	inst.AnimState:SetBank("geo_gridplacer")
+	inst.AnimState:SetBuild("geo_gridplacer")
+	inst.AnimState:PlayAnimation("anim", true)
+end)
 
 -- Fixes deploying on clients in DST
 -- This feels really hackish...... but there doesn't seem to be a better way to do it,
