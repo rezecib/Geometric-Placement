@@ -741,13 +741,14 @@ function Placer:OnUpdate(dt)
 	
 	local has_radius = placers_with_radius[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-	local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
+	local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0.1 or 1
+	local color_mult = COLOR_OPTION_LOOKUP[color] == "white" and 0.6 or 2
 	local should_hide = (HIDEPLACER or color == "hidden")
 	local hide = should_hide and "Hide" or "Show"
 	local show = should_hide and "Show" or "Hide"
 	if type(color) == "table" then
 		self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
-		self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
+		self.inst.AnimState:SetAddColour(color.x*color_mult, color.y*color_mult, color.z*color_mult, 1)
 	end
 	if has_radius then
 		-- placers with a radius have the radius as the main placer,
@@ -773,7 +774,7 @@ function Placer:OnUpdate(dt)
 		end
 		if type(color) == "table" then
 			v.AnimState:SetMultColour(mult, mult, mult, 1)
-			v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
+			v.AnimState:SetAddColour(color.x*color_mult, color.y*color_mult, color.z*color_mult, 1)
 		end
 	end
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
