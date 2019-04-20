@@ -584,7 +584,7 @@ function Placer:OnUpdate(dt)
 		self.inst:Show()
 		self:SetCursorVisibility(true)
 		local ret = OldOnUpdate(self, dt)
-		if not ctrl_disable then
+		if not (ctrl_disable or self.disabled) then
 			-- if we got disabled by the placeTestFn, then still use the chosen color scheme
 			local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
 			if HIDEPLACER or color == "hidden" then
