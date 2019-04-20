@@ -477,7 +477,7 @@ function Placer:RefreshGridPoint(bgx, bgz)
 			bgp.AnimState:SetAddColour(0, 0, 0, 0)
 		else
 			bgp.AnimState:PlayAnimation("anim", true)
-			bgp.AnimState:SetAddColour(color.x, color.y, color.z, 0)
+			bgp.AnimState:SetAddColour(color.x, color.y, color.z, 1)
 		end
 	end
 end
@@ -567,7 +567,7 @@ function Placer:OnUpdate(dt)
 			if COLORS.NEARTILE == "on" or COLORS.NEARTILE == "off" then
 				self.tileinst.AnimState:PlayAnimation(COLORS.NEARTILE)
 			else
-				self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 0)
+				self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 1)
 			end
 		end
 	elseif self.tileinst ~= nil then
@@ -596,11 +596,11 @@ function Placer:OnUpdate(dt)
 				self.inst:Show()
 				local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0 or 255
 				self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
-				self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+				self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 				for i, v in ipairs(self.linked) do
 					v:Show()
 					v.AnimState:SetMultColour(mult, mult, mult, 1)
-					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 				end
 			end
 		end
@@ -747,7 +747,7 @@ function Placer:OnUpdate(dt)
 	local show = should_hide and "Show" or "Hide"
 	if type(color) == "table" then
 		self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
-		self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+		self.inst.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 	end
 	if has_radius then
 		-- placers with a radius have the radius as the main placer,
@@ -773,7 +773,7 @@ function Placer:OnUpdate(dt)
 		end
 		if type(color) == "table" then
 			v.AnimState:SetMultColour(mult, mult, mult, 1)
-			v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 0)
+			v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 		end
 	end
 	if self.cursor_visible == HIDECURSOR or self.cursor_quantity_visible == HIDECURSORQUANTITY then
