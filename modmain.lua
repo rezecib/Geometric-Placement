@@ -706,7 +706,7 @@ function Placer:OnUpdate(dt)
 	self.inst.Transform:SetPosition(pt:Get())
 	self.targetPos = self.inst:GetPosition()
 	self.gridinst.Transform:SetPosition(pt:Get())
-	if self.tileinst then self.tileinst.Transform:SetPosition(TheWorld.Map:GetTileCenterPoint(pt:Get())) end
+	if self.tileinst then self.tileinst.Transform:SetPosition(Vector3(TheWorld.Map:GetTileCenterPoint(pt:Get())):Get()) end
 	
 	if self.fixedcameraoffset ~= nil then
 		local rot = self.fixedcameraoffset - TheCamera:GetHeading() -- rotate against the camera
