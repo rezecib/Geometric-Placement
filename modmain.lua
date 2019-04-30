@@ -170,15 +170,6 @@ local HIDECURSOR = GetConfig("HIDECURSOR", false, function(val) return type(val)
 local HIDECURSORQUANTITY = HIDECURSOR == 1
 local HIDECURSOR = HIDECURSOR ~= false
 local REDUCECHESTSPACING = GetConfig("REDUCECHESTSPACING", true, "boolean")
-if REDUCECHESTSPACING then
--- other geometry mods ignore the special case for chests that increases the spacing for them
--- in Builder:CanBuildAtPoint; however, reducing the built-in spacing by just a little bit
--- gives similar behavior in terms of which lattice points you can build the chest
-	local treasurechestrecipe = DST
-								and GLOBAL.GetValidRecipe('treasurechest')
-								or  GLOBAL.GetRecipe('treasurechest')
-	treasurechestrecipe.min_spacing = treasurechestrecipe.min_spacing - 0.1
-end
 
 local ModSettings = nil
 if DST then
@@ -519,6 +510,17 @@ local allow_place_test = {
 	-- tar extractor is left out so that it uses the normal placer logic
 }
 AddPrefabPostInit("world", function()
+	-- This needs to be done in this post-init because the recipe loading code is not idempotent
+	if REDUCECHESTSPACING then
+	-- other geometry mods ignore the special case for chests that increases the spacing for them
+	-- in Builder:CanBuildAtPoint; however, reducing the built-in spacing by just a little bit
+	-- gives similar behavior in terms of which lattice points you can build the chest
+		local treasurechestrecipe = DST
+									and GLOBAL.GetValidRecipe('treasurechest')
+									or  GLOBAL.GetRecipe('treasurechest')
+		treasurechestrecipe.min_spacing = treasurechestrecipe.min_spacing - 0.1
+	end
+	
 	local Prefabs = GLOBAL.Prefabs
 	-- Veggie seeds for Wormwood, their test is just checking for natural turf
 	for veggie,data in pairs(GLOBAL.VEGGIES) do
