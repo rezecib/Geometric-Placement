@@ -506,6 +506,8 @@ local allow_place_test = {
 	fence_item_placer = true, -- just adjusts the orientation
 	fence_gate_item_placer = true, -- just adjusts the orientation
 	pighouse_city_placer = true, -- just hides some AnimState symbols
+	playerhouse_city_placer = true, -- checks ground tile
+	pig_guard_tower_placer = true, -- checks ground tile and hides some AnimState symbols
 	
 	-- tar extractor is left out so that it uses the normal placer logic
 }
