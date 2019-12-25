@@ -14,6 +14,7 @@ priority = -10
 dont_starve_compatible = true
 reign_of_giants_compatible = true
 shipwrecked_compatible = true
+hamlet_compatible = true
 dst_compatible = true
 
 icon_atlas = "geometricplacement.xml"
