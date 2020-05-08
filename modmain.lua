@@ -1547,25 +1547,29 @@ if DST then
 		false
 	)
 else
-	TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
-		function()
-			if IsDefaultScreen() then
-				if ignore_key then
-					ignore_key = false
-				else
-					PushOptionsScreen()				
+	if type(KEYBOARDTOGGLEKEY) == "string" and KEYBOARDTOGGLEKEY:len() == 1 then
+		TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
+			function()
+				if IsDefaultScreen() then
+					if ignore_key then
+						ignore_key = false
+					else
+						PushOptionsScreen()				
+					end
 				end
-			end
-		end)
-	TheInput:AddKeyUpHandler(GEOMETRYTOGGLEKEY,
-		function()
-			if IsDefaultScreen() then
-				grid_dirty = true
-				local _GEOMETRY = GEOMETRY
-				GEOMETRY = LAST_GEOMETRY
-				LAST_GEOMETRY = _GEOMETRY
-			end
-		end)
+			end)
+	end
+	if type(GEOMETRYTOGGLEKEY) == "string" and GEOMETRYTOGGLEKEY:len() == 1 then
+		TheInput:AddKeyUpHandler(GEOMETRYTOGGLEKEY,
+			function()
+				if IsDefaultScreen() then
+					grid_dirty = true
+					local _GEOMETRY = GEOMETRY
+					GEOMETRY = LAST_GEOMETRY
+					LAST_GEOMETRY = _GEOMETRY
+				end
+			end)
+	end
 end
 
 -- Controller controls

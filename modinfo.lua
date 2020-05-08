@@ -45,6 +45,7 @@ for i = 1, 26 do
 	local ch = string.char(KEY_A + i - 1)
 	keyslist[i] = {description = ch, data = ch}
 end
+keyslist[27] = {description = "None", data = ""}
 
 local percent_options = {}
 for i = 1, 10 do
