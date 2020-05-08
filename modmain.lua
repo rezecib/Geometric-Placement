@@ -1200,7 +1200,7 @@ local function BuilderReplicaPostConstruct(self)
 		if CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			pt = Snap(pt)
 		end
-		OldMakeRecipeAtPoint(self, recipe, pt, ...)
+		return OldMakeRecipeAtPoint(self, recipe, pt, ...)
 	end
 	self.MakeRecipeAtPoint = NewMakeRecipeAtPoint
 end
@@ -1220,7 +1220,7 @@ local function BuilderPostInit(self)
 		if pt and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			pt = Snap(pt)
 		end
-		OldMakeRecipe(self, recipe, pt, ...)
+		return OldMakeRecipe(self, recipe, pt, ...)
 	end
 	self.MakeRecipe = NewMakeRecipe
 end
