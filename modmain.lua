@@ -60,7 +60,10 @@ end
 
 local function GetKeyConfig(configname, default)
 	local value = GetModConfigData(configname)
-	if type(value) == "string" and value:len() > 0 then
+	if type(value) == "string" then
+		if value:len() == 0 then
+			return -1
+		end
 		return value:lower():byte()
 	end
 	if type(value) ~= "number" then
@@ -1547,7 +1550,7 @@ if DST then
 		false
 	)
 else
-	if type(KEYBOARDTOGGLEKEY) == "string" and KEYBOARDTOGGLEKEY:len() == 1 then
+	if KEYBOARDTOGGLEKEY >= 0 then
 		TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
 			function()
 				if IsDefaultScreen() then
@@ -1559,7 +1562,7 @@ else
 				end
 			end)
 	end
-	if type(GEOMETRYTOGGLEKEY) == "string" and GEOMETRYTOGGLEKEY:len() == 1 then
+	if GEOMETRYTOGGLEKEY >= 0 then
 		TheInput:AddKeyUpHandler(GEOMETRYTOGGLEKEY,
 			function()
 				if IsDefaultScreen() then
