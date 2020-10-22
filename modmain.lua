@@ -36,6 +36,7 @@ local require = GLOBAL.require
 local unpack = GLOBAL.unpack
 local os = GLOBAL.os
 local string = GLOBAL.string
+local rawget = GLOBAL.rawget
 local SpawnPrefab = GLOBAL.SpawnPrefab
 local GeometricOptionsScreen = DST and require("screens/geometricoptionsscreen")
 									or require("screens/geometricoptionsscreen_singleplayer")
@@ -828,17 +829,27 @@ function Placer:OnUpdate(dt)
 			pt = Snap(pt)
 		end
 	else -- Controller input
-		local offset = CONTROLLEROFFSET and 1 or 0
+		local offset = CONTROLLEROFFSET and (self.offset or 1) or 0
 		if self.recipe then 
 			if self.recipe.distance then 
 				offset = self.recipe.distance - 1
 				offset = math.max(offset*0.9, 1)
 			end 
 		elseif self.invobject then 
-			if self.invobject.components.deployable and self.invobject.components.deployable.deploydistance then 
-				--Adjusted so that you can place boats when right up against the shoreline
-				offset = self.invobject.components.deployable.deploydistance*0.9
-			end 
+			local deployable = self.invobject.components.deployable
+			if deployable then
+				if deployable.deploydistance then 
+					--Adjusted so that you can place boats when right up against the shoreline
+					offset = deployable.deploydistance*0.9
+				end
+				if deployable.mode and rawget(GLOBAL, "DEPLOYMODE") and deployable.mode == GLOBAL.DEPLOYMODE.WATER then
+					-- Ignore CONTROLLEROFFSET setting for water-placement, because you can't walk on water,
+					-- so you can't place at your feet for water-placeable things, so you need an offset
+					offset = self.offset or 1
+					-- Reduces offset by half of a grid spacing; this prevents snapping from putting the boat out of placement range
+					offset = offset - 0.25
+				end
+			end
 		end
 		
 		if self.snap_to_tile then
@@ -919,7 +930,7 @@ function Placer:OnUpdate(dt)
 	
 	--#rezecib I could use CurrentRelease.GreaterOrEqualTo( "R05_ANR_HERDMENTALITY" )
 	--			but I think duck-typing is the better solution here
-	if type(GLOBAL.rawget(GLOBAL, "TriggerDeployHelpers")) == "function" then
+	if type(rawget(GLOBAL, "TriggerDeployHelpers")) == "function" then
 		--#rezecib This seems to be specific to showing the range of nearby flingomatics
 		local x, y, z = self.inst.Transform:GetWorldPosition()
 		GLOBAL.TriggerDeployHelpers(x, y, z, 64, self.recipe, self.inst)
