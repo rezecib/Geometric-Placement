@@ -1514,7 +1514,9 @@ if kleifileexists("scripts/components/farmtiller.lua") then
 	FarmTiller = require("components/farmtiller")
 	local _FarmTiller_Till = FarmTiller.Till
 	function FarmTiller:Till(pt, ...)
-		pt = Snap(pt)
+		if CTRL == TheInput:IsKeyDown(KEY_CTRL) then
+			pt = Snap(pt)
+		end
 		return _FarmTiller_Till(self, pt, ...)
 	end
 end
