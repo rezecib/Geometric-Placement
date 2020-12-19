@@ -85,7 +85,6 @@ local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
 local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
 local SMARTSPACING = GetConfig("SMARTSPACING", false, "boolean")
-SMARTSPACING = true
 
 local TIMEBUDGET = GetConfig("TIMEBUDGET", 0.1, function(value)
 	return value == false or (
