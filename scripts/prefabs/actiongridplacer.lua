@@ -6,6 +6,7 @@ local assets =
 local function common_fn()
 	local inst = CreateEntity()
 
+	inst:AddTag("CLASSIFIED")
 	inst:AddTag("FX")
 	inst:AddTag("NOCLICK")
     --[[Non-networked entity]]

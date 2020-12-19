@@ -38,6 +38,7 @@ local unpack = GLOBAL.unpack
 local os = GLOBAL.os
 local string = GLOBAL.string
 local rawget = GLOBAL.rawget
+local kleifileexists = GLOBAL.kleifileexists
 local SpawnPrefab = GLOBAL.SpawnPrefab
 local GeometricOptionsScreen = DST and require("screens/geometricoptionsscreen")
 									or require("screens/geometricoptionsscreen_singleplayer")
@@ -312,7 +313,6 @@ our grid inflation factor to 1.5e-4 so that it's above that.
 local EPSILON = 1.5e-4
 -- Generate offsets and lattice conversion functions
 local function SetGeometry(name, spacing, grid_type)
-	print("SetGeometry_pre", name, spacing, grid_type)
 	name = name or "SQUARE"
 	spacing = spacing or 0.5
 	grid_type = grid_type or "default"
@@ -320,7 +320,6 @@ local function SetGeometry(name, spacing, grid_type)
 		name = "SQUARE"
 		spacing = SPACING_BY_TYPE[grid_type] or spacing
 	end
-	print("SetGeometry_pst", name, spacing, grid_type)
 	-- Don't recompute if the last run had the same parameters
 	if GEOMETRY_NAME == name and SPACING == spacing and GRID_TYPE == grid_type then
 		return
@@ -774,13 +773,19 @@ AddPrefabPostInit("world", function()
 	end
 end)
 
-local placers_with_radius = {
+local PLACERS_WITH_RADIUS = {
 	firesuppressor_placer = true,
 	sprinkler_placer = true,
 	winona_battery_low_placer = true,
 	winona_battery_high_placer = true,
 	winona_catapult_placer = true,
 	winona_spotlight_placer = true,
+}
+
+local GRIDPLACER_PREFABS = {
+	gridplacer = true,
+	tile_outline = true,
+	gridplacer_farmablesoil = true,
 }
 
 local OldOnUpdate = Placer.OnUpdate
@@ -840,11 +845,7 @@ function Placer:OnUpdate(dt)
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
 		self.gridinst:Hide()
-		if self.inst.prefab:find("_actiongridplacer") then
-			self.inst:Hide()
-		else
-			self.inst:Show()
-		end
+		self.inst:Show()
 		self:SetCursorVisibility(true)
 		local ret = OldOnUpdate(self, dt)
 		if not (ctrl_disable or self.disabled) then
@@ -866,6 +867,9 @@ function Placer:OnUpdate(dt)
 					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 				end
 			end
+		end
+		if self.inst.prefab:find("_actiongridplacer") then
+			self.inst:Hide()
 		end
 		return ret
 	end
@@ -996,6 +1000,7 @@ function Placer:OnUpdate(dt)
 	else
 		self.can_build = true
 	end
+	
 	--#rezecib Not using mouse_blocked is intentional; it goes against the idea of trying
 	--			to carefully align the placement with the grid; it would get annoying
 	--			if it got hidden every time you passed over a small obstruction
@@ -1008,12 +1013,17 @@ function Placer:OnUpdate(dt)
 		GLOBAL.TriggerDeployHelpers(x, y, z, 64, self.recipe, self.inst)
 	end
 	
+	if self.can_build and self.oncanbuild ~= nil then
+		self.oncanbuild(self.inst, false)
+	elseif not self.can_build and self.oncannotbuild ~= nil then
+		self.oncannotbuild(self.inst, false)
+	end
 	--end of code that closely matches the normal Placer:OnUpdate
 	
-	local has_radius = placers_with_radius[self.inst.prefab]
+	local has_radius = PLACERS_WITH_RADIUS[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
 	local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0.1 or 1
-	local color_mult = COLOR_OPTION_LOOKUP[color] == "white" and 0.6 or 2
+	local color_mult = COLOR_OPTION_LOOKUP[color] == "white" and (GRIDPLACER_PREFABS[self.inst.prefab] and 1 or 0.6) or 2
 	local should_hide = (HIDEPLACER or color == "hidden")
 	local hide = should_hide and "Hide" or "Show"
 	local show = should_hide and "Show" or "Hide"
@@ -1196,6 +1206,27 @@ local function sprinklerPlaceTestFn(inst, pt)
 	return false
 end
 
+-- Replace gridplacer anim without replacing the file directly
+local function ReplaceGridplacerAnim(inst)
+	if inst._geo_replaced_anim then return end
+	inst._geo_replaced_anim = true
+	inst.AnimState:SetBank("geo_gridplacer")
+	inst.AnimState:SetBuild("geo_gridplacer")
+	inst.AnimState:PlayAnimation("anim", true)
+end
+local function UndoReplaceGridplacerAnim(inst)
+	if not inst._geo_replaced_anim then return end
+	inst._geo_replaced_anim = nil
+	inst.AnimState:SetBank("gridplacer")
+	inst.AnimState:SetBuild("gridplacer")
+	inst.AnimState:PlayAnimation("anim", true)
+end
+AddPrefabPostInit("gridplacer", ReplaceGridplacerAnim)
+if DST then
+	AddPrefabPostInit("tile_outline", ReplaceGridplacerAnim)
+	AddPrefabPostInit("gridplacer_farmablesoil", ReplaceGridplacerAnim)
+end
+
 -- But these things do need to get built every time
 local function PlacerPostInit(self)
 	--there's gotta be a better place to put this; also may not be necessary, but it's safe and cheap
@@ -1255,7 +1286,29 @@ local function PlacerPostInit(self)
 		if prefab == "winona_spotlight_placer" or prefab == "winona_catapult_placer" then
 			self.showFirstLinked = true
 		end
+		if GRIDPLACER_PREFABS[prefab] then
+			ReplaceGridplacerAnim(self.inst)
+			local _oncanbuild = self.oncanbuild
+			self.oncanbuild = function(inst, ...)
+				if CTRL ~= TheInput:IsKeyDown(KEY_CTRL) then
+					UndoReplaceGridplacerAnim(self.inst)
+					return _oncanbuild(inst, ...)
+				else
+					ReplaceGridplacerAnim(self.inst)
+				end
+			end
+			local _oncannotbuild = self.oncanbuild
+			self.oncannotbuild = function(inst, ...)
+				if CTRL ~= TheInput:IsKeyDown(KEY_CTRL) then
+					UndoReplaceGridplacerAnim(self.inst)
+					return _oncannotbuild(inst, ...)
+				else
+					ReplaceGridplacerAnim(self.inst)
+				end
+			end
+		end
 	end)
+	
 end
 AddComponentPostInit("placer", PlacerPostInit)
 
@@ -1419,7 +1472,7 @@ if DST then
 	AddClassPostConstruct("components/inventoryitem_replica", InventoryItemReplicaPostConstruct)
 end
 
-if GLOBAL.kleifileexists("scripts/components/farmtiller.lua") then
+if kleifileexists("scripts/components/farmtiller.lua") then
 	FarmTiller = require("components/farmtiller")
 	local _FarmTiller_Till = FarmTiller.Till
 	function FarmTiller:Till(pt, ...)
@@ -1427,14 +1480,6 @@ if GLOBAL.kleifileexists("scripts/components/farmtiller.lua") then
 		return _FarmTiller_Till(self, pt, ...)
 	end
 end
-
--- Replace gridplacer anim without replacing the file directly
-AddPrefabPostInit("gridplacer", function(inst)
-	inst.AnimState:SetBank("geo_gridplacer")
-	inst.AnimState:SetBuild("geo_gridplacer")
-	inst.AnimState:PlayAnimation("anim", true)
-end)
-
 
 ACTIONS_TO_SNAP = {
 	DEPLOY = true,
