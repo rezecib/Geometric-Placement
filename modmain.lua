@@ -1673,31 +1673,33 @@ end
 -- This is pressing the right stick in
 -- CONTROL_MENU_MISC_3 is the same thing as CONTROL_OPEN_DEBUG_MENU
 -- CONTROL_MENU_MISC_4 is the right stick click
-TheInput:AddControlHandler(DST and
-	GLOBAL.CONTROL_MENU_MISC_3 or
-	GLOBAL.CONTROL_OPEN_DEBUG_MENU,
-	DST and 
-	function(down)
-		-- In DST, only let them do it on the scoreboard screen
-		if not down and IsScoreboardScreen() then
-			local ss = GLOBAL.TheFrontEnd.screenstack
-			ss[#ss]:ClearFocus()
-			PushOptionsScreen()
-		end
-	end or function(down)
-		-- In single-player, let them do it on the main screen
-		if not down and IsDefaultScreen() then
-			PushOptionsScreen()
-		end
-	end)
+if KEYBOARDTOGGLEKEY ~= "None" then
+	TheInput:AddControlHandler(DST and
+		GLOBAL.CONTROL_MENU_MISC_3 or
+		GLOBAL.CONTROL_OPEN_DEBUG_MENU,
+		DST and 
+		function(down)
+			-- In DST, only let them do it on the scoreboard screen
+			if not down and IsScoreboardScreen() then
+				local ss = GLOBAL.TheFrontEnd.screenstack
+				ss[#ss]:ClearFocus()
+				PushOptionsScreen()
+			end
+		end or function(down)
+			-- In single-player, let them do it on the main screen
+			if not down and IsDefaultScreen() then
+				PushOptionsScreen()
+			end
+		end)
 
-if DST then
-	AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)
-		local OldGetHelpText = PlayerStatusScreen.GetHelpText
-		function PlayerStatusScreen:GetHelpText()
-			local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
-			return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
-				.. control_string .. OldGetHelpText(self)
-		end
-	end)
+	if DST then
+		AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)
+			local OldGetHelpText = PlayerStatusScreen.GetHelpText
+			function PlayerStatusScreen:GetHelpText()
+				local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
+				return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
+					.. control_string .. OldGetHelpText(self)
+			end
+		end)
+	end
 end
