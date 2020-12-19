@@ -100,29 +100,24 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.subtitle_misc:SetColour(UICOLOURS.GOLD)
 
     self.subtitle_gridsize = self.proot:AddChild(Text(CHATFONT, 22))
-    self.subtitle_gridsize:SetPosition(205, -105, 0)
+    self.subtitle_gridsize:SetPosition(224, -105, 0)
     self.subtitle_gridsize:SetString("Grid Sizes")
     self.subtitle_gridsize:SetColour(UICOLOURS.GOLD)
 
     self.subtitle_gridsize1 = self.proot:AddChild(Text(CHATFONT, 18))
-    self.subtitle_gridsize1:SetPosition(125, -125, 0)
+    self.subtitle_gridsize1:SetPosition(164, -125, 0)
     self.subtitle_gridsize1:SetString("Fine")
     self.subtitle_gridsize1:SetColour(UICOLOURS.GOLD)
 
     self.subtitle_gridsize2 = self.proot:AddChild(Text(CHATFONT, 18))
-    self.subtitle_gridsize2:SetPosition(178, -125, 0)
+    self.subtitle_gridsize2:SetPosition(224, -125, 0)
     self.subtitle_gridsize2:SetString("Wall")
     self.subtitle_gridsize2:SetColour(UICOLOURS.GOLD)
 
     self.subtitle_gridsize3 = self.proot:AddChild(Text(CHATFONT, 18))
-    self.subtitle_gridsize3:SetPosition(231, -125, 0)
-    self.subtitle_gridsize3:SetString("Sandbag")
+    self.subtitle_gridsize3:SetPosition(284, -125, 0)
+    self.subtitle_gridsize3:SetString("Turf")
     self.subtitle_gridsize3:SetColour(UICOLOURS.GOLD)
-
-    self.subtitle_gridsize4 = self.proot:AddChild(Text(CHATFONT, 18))
-    self.subtitle_gridsize4:SetPosition(284, -125, 0)
-    self.subtitle_gridsize4:SetString("Turf")
-    self.subtitle_gridsize4:SetColour(UICOLOURS.GOLD)
 
 	-- dividers
 	-- local r, g, b = unpack(UICOLOURS.GOLD)
@@ -429,19 +424,15 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	local gridsize_y = -145
 	local smallgridsizeoptions = {}
 	for i=0,10 do smallgridsizeoptions[i+1] = {text=""..(i*2).."", data=i*2} end
-	self.smallgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(smallgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(1, selected) end))
-	self.smallgrid:SetPosition(125, gridsize_y)
+	self.smallgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(smallgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize("SMALL", selected) end))
+	self.smallgrid:SetPosition(164, gridsize_y)
 	local medgridsizeoptions = {}
 	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.medgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(medgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(2, selected) end))
-	self.medgrid:SetPosition(178, gridsize_y)
-	local floodgridsizeoptions = {}
-	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.floodgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(floodgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(3, selected) end))
-	self.floodgrid:SetPosition(231, gridsize_y)
+	self.medgrid = self.proot:AddChild(TEMPLATES.StandardSpinner(medgridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize("MED", selected) end))
+	self.medgrid:SetPosition(224, gridsize_y)
 	local biggridsizeoptions = {}
 	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.biggrid = self.proot:AddChild(TEMPLATES.StandardSpinner(biggridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize(4, selected) end))
+	self.biggrid = self.proot:AddChild(TEMPLATES.StandardSpinner(biggridsizeoptions, 50, 20, nil, 18, function(selected, old) self.callbacks.gridsize("BIG", selected) end))
 	self.biggrid:SetPosition(284, gridsize_y)
 	
 	-- Gross fix for terribly brittle code in "Chinese Plus" mod which tries to invasively rewrite the strings
@@ -506,7 +497,6 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 		[self.refresh] = 4,
 		[self.smallgrid] = 4,
 		[self.medgrid] = 4,
-		[self.floodgrid] = 4,
 		[self.biggrid] = 4,
 	}
 	for _,button in pairs(self.geometry_buttons) do
@@ -657,12 +647,9 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 	self.smallgrid:SetFocusChangeDir(MOVE_RIGHT, self.medgrid)
 	self.medgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
 	self.medgrid:SetFocusChangeDir(MOVE_LEFT, self.smallgrid)
-	self.medgrid:SetFocusChangeDir(MOVE_RIGHT, self.floodgrid)
-	self.floodgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
-	self.floodgrid:SetFocusChangeDir(MOVE_LEFT, self.medgrid)
-	self.floodgrid:SetFocusChangeDir(MOVE_RIGHT, self.biggrid)
+	self.medgrid:SetFocusChangeDir(MOVE_RIGHT, self.biggrid)
 	self.biggrid:SetFocusChangeDir(MOVE_UP, self.refresh)
-	self.biggrid:SetFocusChangeDir(MOVE_LEFT, self.floodgrid)
+	self.biggrid:SetFocusChangeDir(MOVE_LEFT, self.medgrid)
 end
 
 function GeometricOptionsScreen:OnFocusMove(dir, down)

@@ -33,8 +33,6 @@ local smallgridsizeoptions = {}
 for i=0,10 do smallgridsizeoptions[i+1] = {description=""..(i*2).."", data=i*2} end
 local medgridsizeoptions = {}
 for i=0,10 do medgridsizeoptions[i+1] = {description=""..(i).."", data=i} end
-local floodgridsizeoptions = {}
-for i=0,10 do floodgridsizeoptions[i+1] = {description=""..(i).."", data=i} end
 local biggridsizeoptions = {}
 for i=0,5 do biggridsizeoptions[i+1] = {description=""..(i).."", data=i} end
 
@@ -169,24 +167,17 @@ configuration_options =
 	},
 	{
 		name = "MEDGRIDSIZE",
-		label = "Wall Grid Size",
+		label = "Medium Grid Size",
 		options = medgridsizeoptions,
 		default = 6,	
-		hover = "How big to make the grid for walls.",
-	},
-	{
-		name = "FLOODGRIDSIZE",
-		label = "Sandbag Grid Size",
-		options = floodgridsizeoptions,
-		default = 5,	
-		hover = "How big to make the grid for sandbags.",
+		hover = "How big to make the grid for things that use a medium grid (such as walls, DST crops).",
 	},
 	{
 		name = "BIGGRIDSIZE",
-		label = "Turf Grid Size",
+		label = "Large Grid Size",
 		options = biggridsizeoptions,
 		default = 2,	
-		hover = "How big to make the grid for turf/pitchfork.",
+		hover = "How big to make the grid for things that use a large grid (such as turf and pitchforks).",
 	},
 	{
 		name = "GOODCOLOR",

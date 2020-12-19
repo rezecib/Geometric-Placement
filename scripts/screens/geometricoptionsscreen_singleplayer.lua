@@ -312,13 +312,11 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.subtitle_gridsize2:SetPosition(178, -120, 0)
     self.subtitle_gridsize2:SetString("Wall")
 	
-    self.subtitle_gridsize3 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize3:SetPosition(231, -120, 0)
-    self.subtitle_gridsize3:SetString("Sandbag")
+	-- TODO: adjust positioning
 	
-    self.subtitle_gridsize4 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize4:SetPosition(284, -120, 0)
-    self.subtitle_gridsize4:SetString("Turf")
+    self.subtitle_gridsize3 = self.proot:AddChild(Text(BUTTONFONT, 18))
+    self.subtitle_gridsize3:SetPosition(284, -120, 0)
+    self.subtitle_gridsize3:SetString("Turf")
 
 	-- self.horizontal_line = self.proot:AddChild(Image("images/ui.xml", "line_horizontal_6.tex"))
 	-- self.horizontal_line:SetScale(1.7, .38)
@@ -605,7 +603,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.smallgrid:SetTextColour(0,0,0,1)
 	self.smallgrid:SetScale(.28, .6)
 	self.smallgrid.text:SetScale(2.1, 1)
-	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize(1, data) end
+	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize("SMALL", data) end
 	self.smallgrid:SetPosition(125, -145)
 	local medgridsizeoptions = {}
 	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
@@ -613,23 +611,24 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.medgrid:SetTextColour(0,0,0,1)
 	self.medgrid:SetScale(.28, .6)
 	self.medgrid.text:SetScale(2.1, 1)
-	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize(2, data) end
+	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize("MED", data) end
 	self.medgrid:SetPosition(178, -145)
-	local floodgridsizeoptions = {}
-	for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
-	self.floodgrid:SetTextColour(0,0,0,1)
-	self.floodgrid:SetScale(.28, .6)
-	self.floodgrid.text:SetScale(2.1, 1)
-	self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
-	self.floodgrid:SetPosition(231, -145)
+	-- TODO: fix positioning of grid size options now that flood grid is gone
+	-- local floodgridsizeoptions = {}
+	-- for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
+	-- self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
+	-- self.floodgrid:SetTextColour(0,0,0,1)
+	-- self.floodgrid:SetScale(.28, .6)
+	-- self.floodgrid.text:SetScale(2.1, 1)
+	-- self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
+	-- self.floodgrid:SetPosition(231, -145)
 	local biggridsizeoptions = {}
 	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
 	self.biggrid:SetTextColour(0,0,0,1)
 	self.biggrid:SetScale(.28, .6)
 	self.biggrid.text:SetScale(2.1, 1)
-	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize(4, data) end
+	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize("BIG", data) end
 	self.biggrid:SetPosition(284, -145)
 	
 	TheInputProxy:SetCursorVisible(true)
@@ -691,7 +690,6 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 		[self.refresh] = 4,
 		[self.smallgrid] = 4,
 		[self.medgrid] = 4,
-		[self.floodgrid] = 4,
 		[self.biggrid] = 4,
 	}
 	for _,button in pairs(self.geometry_buttons) do
@@ -842,12 +840,9 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 	self.smallgrid:SetFocusChangeDir(MOVE_RIGHT, self.medgrid)
 	self.medgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
 	self.medgrid:SetFocusChangeDir(MOVE_LEFT, self.smallgrid)
-	self.medgrid:SetFocusChangeDir(MOVE_RIGHT, self.floodgrid)
-	self.floodgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
-	self.floodgrid:SetFocusChangeDir(MOVE_LEFT, self.medgrid)
-	self.floodgrid:SetFocusChangeDir(MOVE_RIGHT, self.biggrid)
+	self.medgrid:SetFocusChangeDir(MOVE_RIGHT, self.biggrid)
 	self.biggrid:SetFocusChangeDir(MOVE_UP, self.refresh)
-	self.biggrid:SetFocusChangeDir(MOVE_LEFT, self.floodgrid)
+	self.biggrid:SetFocusChangeDir(MOVE_LEFT, self.medgrid)
 end
 
 function GeometricOptionsScreen:OnFocusMove(dir, down)
