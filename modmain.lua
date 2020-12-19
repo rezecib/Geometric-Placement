@@ -85,6 +85,7 @@ local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
 local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
 local SMARTSPACING = GetConfig("SMARTSPACING", false, "boolean")
+SMARTSPACING = true
 
 local TIMEBUDGET = GetConfig("TIMEBUDGET", 0.1, function(value)
 	return value == false or (
@@ -842,6 +843,10 @@ function Placer:OnUpdate(dt)
 		if agp_index then
 			local action = prefab:sub(1, agp_index-1):upper()
 			spacing = ACTION_GRID_SPACING[action] or spacing
+		end
+		if spacing > 1 then
+			-- Divide the optimal spacing evenly to get it in the 0.5-1 range to give more options of where to put things
+			spacing = spacing/math.floor(spacing*2)
 		end
 		if self.snap_to_meters then
 			grid_type = "wall"
