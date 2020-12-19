@@ -79,6 +79,7 @@ end
 local CTRL = GetConfig("CTRL", false, "boolean")
 local KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
 local GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
+local SNAPGRIDKEY = GetKeyConfig("SNAPGRIDKEY", "")
 local SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
 local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
@@ -262,14 +263,14 @@ local SAVED_LAST_GEOMETRY_NAME = inferred_last_geometries[SAVED_GEOMETRY_NAME]
 -- Local variables for the currently-active geometry for speedy lookup
 local GEOMETRY_DIRTY = false
 local GEOMETRY_NAME
+local SPACING
+local GRID_TYPE
 local GRID_SIZE
 local ROW_OFFSET
 local COL_OFFSET
 local ORIGIN_OFFSET
 local ToLatticeCoords
 local Snap
-local SPACING
-local GRID_TYPE
 
 local SPACING_BY_TYPE = {
 	wall = 1,
@@ -321,9 +322,10 @@ local function SetGeometry(name, spacing, grid_type)
 		spacing = SPACING_BY_TYPE[grid_type] or spacing
 	end
 	-- Don't recompute if the last run had the same parameters
-	if GEOMETRY_NAME == name and SPACING == spacing and GRID_TYPE == grid_type then
+	if not GEOMETRY_DIRTY and GEOMETRY_NAME == name and SPACING == spacing and GRID_TYPE == grid_type then
 		return
 	else
+		GEOMETRY_DIRTY = false
 		GRID_DIRTY = true
 		GEOMETRY_NAME = name
 		SPACING = spacing
@@ -397,6 +399,29 @@ local function SetGeometry(name, spacing, grid_type)
 	end
 end
 SetGeometry(SAVED_GEOMETRY_NAME)
+
+--[[
+Adjusts the origin offset of the grid to have a point directly under the hovered object or lattice point
+Lattice point here refers to the standard 0.5 spacing square grid, which has nice properties with respect to tiles;
+it has a point at the center of each tile, as well as a nice spread of points along the borders (center, corner, some between).
+]]
+local function SnapGrid()
+	local pt = TheInput:GetWorldPosition()
+	local target = TheInput:GetWorldEntityUnderMouse()
+	if target ~= nil then
+		pt = target:GetPosition()
+	else
+		pt.x = math.floor(pt.x*2 + 0.5)/2
+		pt.y = 0
+		pt.z = math.floor(pt.z*2 + 0.5)/2
+	end
+	ORIGIN_OFFSETS.default = pt
+	if GRID_TYPE == "default" then
+		GRID_DIRTY = true
+		GEOMETRY_DIRTY = true
+	end
+	print("SnapGrid", target, pt, ORIGIN_OFFSETS.default)
+end
 
 local function GetTillSpacing()
 	local till_spacing = rawget(GLOBAL, "GetFarmTillSpacing") and GLOBAL.GetFarmTillSpacing()
@@ -795,7 +820,6 @@ function Placer:OnUpdate(dt)
 	local TheWorld = DST and GLOBAL.TheWorld or GLOBAL.GetWorld()
 	if GEOMETRY_DIRTY or self.waiting_for_geometry then
 		self.waiting_for_geometry = nil
-		GEOMETRY_DIRTY = false
 		local geometry = SAVED_GEOMETRY_NAME
 		local grid_type = "default"
 		local spacing = 0.5
@@ -1691,6 +1715,18 @@ if DST then
 		end,
 		false
 	)
+	ModSettings.AddControl(
+		modname,
+		"SNAPGRIDKEY",
+		"Snap Grid",
+		"",
+		function ()
+			if IsDefaultScreen() then
+				SnapGrid()
+			end
+		end,
+		false
+	)
 else
 	if KEYBOARDTOGGLEKEY >= 0 then
 		TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
@@ -1711,6 +1747,15 @@ else
 					SwapGeometry()
 				end
 			end)
+	end
+	if SNAPGRIDKEY >= 0 then
+		TheInput:AddKeyUpHandler(SNAPGRIDKEY,
+			function()
+				if IsDefaultScreen() then
+					SnapGrid()
+				end
+			end
+		)
 	end
 end
 

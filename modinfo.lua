@@ -93,8 +93,16 @@ configuration_options =
         label = "Toggle Button",
         options = keyslist,
         default = "V",
-		-- hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)\nI recommend setting this with the Settings menu in DST.",
-		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon)",
+		-- hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon). No controller binding.\nI recommend setting this with the Settings menu in DST.",
+		hover = "A key to toggle to the most recently used geometry\n(for example, switching between Square and X-Hexagon). No controller binding.",
+    },    
+    {
+        name = "SNAPGRIDKEY",
+        label = "Snap Grid Button",
+        options = keyslist,
+        default = "",
+		-- hover = "A key to snap the grid to have a point centered on the hovered object or point. No controller binding.\nI recommend setting this with the Settings menu in DST.",
+		hover = "A key to snap the grid to have a point centered on the hovered object or point. No controller binding.",
     },    
     {
         name = "SHOWMENU",
