@@ -1518,11 +1518,12 @@ end
 if kleifileexists("scripts/components/farmtiller.lua") then
 	FarmTiller = require("components/farmtiller")
 	local _FarmTiller_Till = FarmTiller.Till
-	function FarmTiller:Till(pt, ...)
-		if CTRL == TheInput:IsKeyDown(KEY_CTRL) then
+	function FarmTiller:Till(pt, doer, ...)
+		-- Filter on ThePlayer to prevent host grid from overriding clients
+		if rawget(GLOBAL, "ThePlayer") == doer and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			pt = Snap(pt)
 		end
-		return _FarmTiller_Till(self, pt, ...)
+		return _FarmTiller_Till(self, pt, doer, ...)
 	end
 end
 
