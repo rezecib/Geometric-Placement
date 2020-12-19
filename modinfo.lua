@@ -167,6 +167,16 @@ configuration_options =
 		hover = "Whether to hide the cursor item, to better see the grid.",
 	},
 	{
+		name = "SMARTSPACING",
+		label = "Smart Spacing",
+		options =	{
+						{description = "On", data = true},
+						{description = "Off", data = false},
+					},
+		default = false,	
+		hover = "Whether to adjust the spacing of the grid based on what object is being placed.\nAllows for optimal grids, but can make it hard to put things just where you want them.",
+	},
+	{
 		name = "SMALLGRIDSIZE",
 		label = "Fine Grid Size",
 		options = smallgridsizeoptions,

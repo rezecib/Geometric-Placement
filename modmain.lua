@@ -84,6 +84,7 @@ local SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
 local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
 local CONTROLLEROFFSET = GetConfig("CONTROLLEROFFSET", false, "boolean")
+local SMARTSPACING = GetConfig("SMARTSPACING", false, "boolean")
 
 local TIMEBUDGET = GetConfig("TIMEBUDGET", 0.1, function(value)
 	return value == false or (
@@ -420,19 +421,16 @@ local function SnapGrid()
 		GRID_DIRTY = true
 		GEOMETRY_DIRTY = true
 	end
-	print("SnapGrid", target, pt, ORIGIN_OFFSETS.default)
 end
 
-local function GetTillSpacing()
-	local till_spacing = rawget(GLOBAL, "GetFarmTillSpacing") and GLOBAL.GetFarmTillSpacing()
-	if type(till_spacing) ~= "number" then
-		till_spacing = 1.25
-	end
-	return till_spacing + EPSILON
+local TILL_SPACING = rawget(GLOBAL, "GetFarmTillSpacing") and GLOBAL.GetFarmTillSpacing()
+if type(TILL_SPACING) ~= "number" then
+	TILL_SPACING = 1.25
 end
+TILL_SPACING = TILL_SPACING + EPSILON
 
 local ACTION_GRID_SPACING = {
-	TILL = GetTillSpacing()
+	TILL = TILL_SPACING
 }
 for action,_ in pairs(ACTION_GRID_SPACING) do
 	if rawget(GLOBAL.ACTIONS, action) then
@@ -574,7 +572,7 @@ end
 
 -- Placers here will run the placeTestFn for each point
 -- Otherwise, placeTestFn makes it default to non-mod behavior (like holding ctrl)
-local allow_place_test = {
+local ALLOW_PLACE_TEST = {
 	fish_farm_placer = true, -- adjusts animations and checks for nearby blocking structures
 	sprinkler_placer = true, -- tests for nearby water, but is super inefficient, we'll replace in PostInit
 	clawpalmtree_sapling_placer = true, -- tests for the correct ground; not sure this is even obtainable?
@@ -754,7 +752,7 @@ AddPrefabPostInit("world", function(world)
 		end
 		local had_unknown_placers = false
 		for k,v in pairs(GLOBAL.Prefabs) do
-			if k:find("_placer$") and not (allow_place_test[k] or disable_place_test[k]) then
+			if k:find("_placer$") and not (ALLOW_PLACE_TEST[k] or disable_place_test[k]) then
 				local fake_placer_inst = GLOBAL.SpawnPrefab(k)
 				if fake_placer_inst.components.placer.placeTestFn then
 					print("New placer with placeTestFn:", k)
@@ -769,6 +767,12 @@ AddPrefabPostInit("world", function(world)
 	end)
 end)
 -- ]]
+
+-- We can figure out spacing for buildings from recipes and deployables that have deployspacing,
+-- but some things have custom functions with the spacing buried in the logic.
+local PLACER_SPACING_OVERRIDES = {
+	seeds_placer = TILL_SPACING,
+}
 
 AddPrefabPostInit("world", function()
 	-- This needs to be done in this post-init because the recipe loading code is not idempotent
@@ -787,13 +791,14 @@ AddPrefabPostInit("world", function()
 	for veggie,data in pairs(GLOBAL.VEGGIES) do
 		local seed_placer = veggie.."_seeds_placer"
 		if Prefabs[seed_placer] then
-			allow_place_test[seed_placer] = true
+			ALLOW_PLACE_TEST[seed_placer] = true
+			PLACER_SPACING_OVERRIDES[seeds_placer] = TILL_SPACING
 		end
 	end
 	-- Pig shops in Hamlet, their test just hides some AnimState symbols; could be put in placer-only logic when it exists
 	for prefab, _ in pairs(Prefabs) do
 		if type(prefab) == "string" and prefab:match("^pig_shop") and prefab:match("_placer$") then
-			allow_place_test[prefab] = true
+			ALLOW_PLACE_TEST[prefab] = true
 		end
 	end
 end)
@@ -824,6 +829,15 @@ function Placer:OnUpdate(dt)
 		local grid_type = "default"
 		local spacing = 0.5
 		local prefab = self.inst.prefab
+		if SMARTSPACING then
+			if self.recipe then
+				spacing = self.recipe.min_spacing or spacing
+			end
+			if self.invobject and self.invobject.replica and self.invobject.replica.inventoryitem then
+				spacing = self.invobject.replica.inventoryitem:DeploySpacingRadius() or spacing
+			end
+			spacing = PLACER_SPACING_OVERRIDES[prefab] or spacing
+		end
 		local agp_index = prefab:find("_actiongridplacer")
 		if agp_index then
 			local action = prefab:sub(1, agp_index-1):upper()
@@ -864,7 +878,7 @@ function Placer:OnUpdate(dt)
 	end
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
-	local disabled_place_test = self.placeTestFn ~= nil and not allow_place_test[self.inst.prefab]
+	local disabled_place_test = self.placeTestFn ~= nil and not ALLOW_PLACE_TEST[self.inst.prefab]
 	if ctrl_disable or disabled_place_test or self.disabled then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
