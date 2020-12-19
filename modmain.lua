@@ -413,9 +413,9 @@ local function SnapGrid()
 	if target ~= nil then
 		pt = target:GetPosition()
 	else
-		pt.x = math.floor(pt.x*2 + 0.5)/2
+		pt.x = math.floor(pt.x + 0.5)
 		pt.y = 0
-		pt.z = math.floor(pt.z*2 + 0.5)/2
+		pt.z = math.floor(pt.z + 0.5)
 	end
 	ORIGIN_OFFSETS.default = pt
 	if GRID_TYPE == "default" then
