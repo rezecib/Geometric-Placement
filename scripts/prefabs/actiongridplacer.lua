@@ -31,8 +31,17 @@ local function common_fn()
 	return inst
 end
 
+local FIND_SOIL_MUST_TAGS = { "soil" }
+local TILLSOIL_IGNORE_TAGS = { "NOBLOCK", "player", "FX", "INLIMBO", "DECOR", "WALKABLEPLATFORM" } --, "soil" }
 local function till_testfn(pt)
-	return TheWorld.Map:CanTillSoilAtPoint(pt.x, 0, pt.z)
+	if TheWorld.Map:CanTillSoilAtPoint(pt.x, 0, pt.z) then
+		for i, v in ipairs(TheSim:FindEntities(pt.x, 0, pt.z, GetFarmTillSpacing(), FIND_SOIL_MUST_TAGS, TILLSOIL_IGNORE_TAGS)) do
+			-- print(v)
+			return false
+		end
+		return true
+	end
+	return false
 end
 
 local function till()
