@@ -407,9 +407,19 @@ Adjusts the origin offset of the grid to have a point directly under the hovered
 Lattice point here refers to the standard 0.5 spacing square grid, which has nice properties with respect to tiles;
 it has a point at the center of each tile, as well as a nice spread of points along the borders (center, corner, some between).
 ]]
+local GRID_ACTION
 local function SnapGrid()
 	local pt = TheInput:GetWorldPosition()
 	local target = TheInput:GetWorldEntityUnderMouse()
+	if target == nil and GRID_ACTION == "TILL" then
+		local ents = GLOBAL.TheSim:GetEntitiesAtScreenPoint(GLOBAL.TheSim:GetPosition())
+		for _,e in pairs(ents) do
+			-- Copied from componentactions.farmplantable
+			if e:HasTag("soil") and not e:HasTag("NOCLICK") then
+				target = e
+			end
+		end
+	end
 	if target ~= nil then
 		pt = target:GetPosition()
 	else
@@ -842,7 +852,10 @@ function Placer:OnUpdate(dt)
 		local agp_index = prefab:find("_actiongridplacer")
 		if agp_index then
 			local action = prefab:sub(1, agp_index-1):upper()
+			GRID_ACTION = action
 			spacing = ACTION_GRID_SPACING[action] or spacing
+		else
+			GRID_ACTION = nil
 		end
 		if spacing > 1 then
 			-- Divide the optimal spacing evenly to get it in the 0.5-1 range to give more options of where to put things
