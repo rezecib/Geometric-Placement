@@ -12,6 +12,7 @@ images_and_atlases = {
 	"cursor_toggle_icon",
 	"cursor_toggle_icon_num",
 	"placer_toggle_icon",
+	"smart_spacing_toggle_icon",
 }
 for _,geometry in pairs({"diamond", "square", "flat_hexagon", "pointy_hexagon", "x_hexagon", "z_hexagon"}) do
 	table.insert(images_and_atlases, geometry .. "_geometry")
@@ -1697,6 +1698,11 @@ local function PushOptionsScreen()
 	screen.callbacks.gridsize = SetGridSize
 	screen.callbacks.ignore = set_ignore
 	GLOBAL.TheFrontEnd:PushScreen(screen)
+	screen.callbacks.smart_spacing = function()
+		SMARTSPACING = not SMARTSPACING
+		GRID_DIRTY = true
+		GEOMETRY_DIRTY = true
+	end
 end
 
 -- Keyboard controls
