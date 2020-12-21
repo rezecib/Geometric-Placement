@@ -411,12 +411,22 @@ local GRID_ACTION
 local function SnapGrid()
 	local pt = TheInput:GetWorldPosition()
 	local target = TheInput:GetWorldEntityUnderMouse()
-	if target == nil and GRID_ACTION == "TILL" then
-		local ents = GLOBAL.TheSim:GetEntitiesAtScreenPoint(GLOBAL.TheSim:GetPosition())
-		for _,e in pairs(ents) do
-			-- Copied from componentactions.farmplantable
-			if e:HasTag("soil") and not e:HasTag("NOCLICK") then
-				target = e
+	if target == nil then
+		if GRID_ACTION == "TILL" then
+			local ents = GLOBAL.TheSim:GetEntitiesAtScreenPoint(GLOBAL.TheSim:GetPosition())
+			for _,e in pairs(ents) do
+				-- Copied from componentactions.farmplantable
+				if e:HasTag("soil") and not e:HasTag("NOCLICK") then
+					target = e
+				end
+			end
+		else
+			-- Look for boats and snap to the center of the boat; written with reference to Map:IsPassableAtPoint
+			local ents = GLOBAL.TheSim:GetEntitiesAtScreenPoint(GLOBAL.TheSim:GetPosition())
+			for _,e in pairs(ents) do
+				if e.components.walkwableplatform then
+					target = e
+				end
 			end
 		end
 	end
