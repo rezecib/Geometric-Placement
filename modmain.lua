@@ -858,7 +858,8 @@ function Placer:OnUpdate(dt)
 				spacing = self.recipe.min_spacing or spacing
 			end
 			if self.invobject and self.invobject.replica and self.invobject.replica.inventoryitem then
-				spacing = self.invobject.replica.inventoryitem:DeploySpacingRadius() or spacing
+				local deployspacing = self.invobject.replica.inventoryitem:DeploySpacingRadius()
+				spacing = deployspacing ~= 0 and deployspacing or spacing
 			end
 			spacing = PLACER_SPACING_OVERRIDES[prefab] or spacing
 		end
