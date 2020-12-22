@@ -1716,6 +1716,12 @@ local function PushOptionsScreen()
 		HIDECURSOR = toggle ~= 2
 		HIDECURSORQUANTITY = toggle == 0
 	end
+	if not SMARTSPACING then screen.smart_spacing_button.onclick() end
+	screen.callbacks.smart_spacing = function()
+		SMARTSPACING = not SMARTSPACING
+		GRID_DIRTY = true
+		GEOMETRY_DIRTY = true
+	end
 	screen.refresh:SetSelected(timebudget_percent)
 	screen.callbacks.refresh = SetTimeBudget
 	screen.smallgrid:SetSelected(GRID_SIZES.SMALL)
@@ -1724,11 +1730,6 @@ local function PushOptionsScreen()
 	screen.callbacks.gridsize = SetGridSize
 	screen.callbacks.ignore = set_ignore
 	GLOBAL.TheFrontEnd:PushScreen(screen)
-	screen.callbacks.smart_spacing = function()
-		SMARTSPACING = not SMARTSPACING
-		GRID_DIRTY = true
-		GEOMETRY_DIRTY = true
-	end
 end
 
 -- Keyboard controls
