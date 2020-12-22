@@ -818,7 +818,7 @@ AddPrefabPostInit("world", function()
 		local seed_placer = veggie.."_seeds_placer"
 		if Prefabs[seed_placer] then
 			ALLOW_PLACE_TEST[seed_placer] = true
-			PLACER_SPACING_OVERRIDES[seeds_placer] = TILL_SPACING
+			PLACER_SPACING_OVERRIDES[seed_placer] = TILL_SPACING
 		end
 	end
 	-- Pig shops in Hamlet, their test just hides some AnimState symbols; could be put in placer-only logic when it exists
