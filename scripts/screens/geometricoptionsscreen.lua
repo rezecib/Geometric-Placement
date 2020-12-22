@@ -113,11 +113,15 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.subtitle_gridsize2:SetPosition(224, -125, 0)
     self.subtitle_gridsize2:SetString("Wall")
     self.subtitle_gridsize2:SetColour(UICOLOURS.GOLD)
+	
+	-- Placeholder for Chinese Plus mod
+	self.subtitle_gridsize3 = self.proot:AddChild(Text(CHATFONT, 18))
+	self.subtitle_gridsize3:Hide()
 
-    self.subtitle_gridsize3 = self.proot:AddChild(Text(CHATFONT, 18))
-    self.subtitle_gridsize3:SetPosition(284, -125, 0)
-    self.subtitle_gridsize3:SetString("Turf")
-    self.subtitle_gridsize3:SetColour(UICOLOURS.GOLD)
+    self.subtitle_gridsize4 = self.proot:AddChild(Text(CHATFONT, 18))
+    self.subtitle_gridsize4:SetPosition(284, -125, 0)
+    self.subtitle_gridsize4:SetString("Turf")
+    self.subtitle_gridsize4:SetColour(UICOLOURS.GOLD)
 
 	-- dividers
 	-- local r, g, b = unpack(UICOLOURS.GOLD)

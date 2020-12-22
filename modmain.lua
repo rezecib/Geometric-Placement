@@ -450,13 +450,16 @@ if type(TILL_SPACING) ~= "number" then
 end
 TILL_SPACING = TILL_SPACING + EPSILON
 
-local ACTION_GRID_SPACING = {
-	TILL = TILL_SPACING
+local RMB_ACTION_GRID_SPACING = {
+	TILL = TILL_SPACING,
 }
-for action,_ in pairs(ACTION_GRID_SPACING) do
+local function SetGridForRmbAction(action, value)
 	if rawget(GLOBAL.ACTIONS, action) then
-		GLOBAL.ACTIONS[action].tile_placer = action:lower() .. "_actiongridplacer"
+		GLOBAL.ACTIONS[action].tile_placer = value and (action:lower() .. "_actiongridplacer") or nil
 	end
+end
+for action,_ in pairs(RMB_ACTION_GRID_SPACING) do
+	SetGridForRmbAction(action, true)
 end
 
 --[[ Placer Component ]]--
@@ -863,7 +866,7 @@ function Placer:OnUpdate(dt)
 		if agp_index then
 			local action = prefab:sub(1, agp_index-1):upper()
 			GRID_ACTION = action
-			spacing = ACTION_GRID_SPACING[action] or spacing
+			spacing = RMB_ACTION_GRID_SPACING[action] or spacing
 		else
 			GRID_ACTION = nil
 		end
@@ -1553,7 +1556,7 @@ end
 ACTIONS_TO_SNAP = {
 	DEPLOY = true,
 }
-for action, _ in pairs(ACTION_GRID_SPACING) do
+for action, _ in pairs(RMB_ACTION_GRID_SPACING) do
 	ACTIONS_TO_SNAP[action] = true
 end
 ACTION_CODES_TO_SNAP = {}
