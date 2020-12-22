@@ -267,6 +267,7 @@ local GEOMETRY_DIRTY = false
 local GEOMETRY_NAME
 local SPACING
 local GRID_TYPE
+local GRID_ACTION
 local GRID_SIZE
 local ROW_OFFSET
 local COL_OFFSET
@@ -335,7 +336,7 @@ local function SetGeometry(name, spacing, grid_type)
 	end
 	GRID_SIZE = ChooseGridSize(SPACING)
 	ORIGIN_OFFSET = ORIGIN_OFFSETS[grid_type]
-	local grid_inflation = GEOMETRY_NAME == "SQUARE" and 1 or (1 + EPSILON)
+	local grid_inflation = GEOMETRY_NAME == "SQUARE" and 1 or (1 + (GRID_ACTION == "TILL" and 0 or EPSILON))
 	local geometry = GEOMETRIES[GEOMETRY_NAME]
 	ROW_OFFSET = geometry.row_offset*SPACING*grid_inflation
 	COL_OFFSET = geometry.col_offset*SPACING*grid_inflation
@@ -407,7 +408,6 @@ Adjusts the origin offset of the grid to have a point directly under the hovered
 Lattice point here refers to the standard 0.5 spacing square grid, which has nice properties with respect to tiles;
 it has a point at the center of each tile, as well as a nice spread of points along the borders (center, corner, some between).
 ]]
-local GRID_ACTION
 local function SnapGrid()
 	local pt = TheInput:GetWorldPosition()
 	local target = TheInput:GetWorldEntityUnderMouse()
@@ -444,11 +444,13 @@ local function SnapGrid()
 	end
 end
 
-local TILL_SPACING = rawget(GLOBAL, "GetFarmTillSpacing") and GLOBAL.GetFarmTillSpacing()
-if type(TILL_SPACING) ~= "number" then
-	TILL_SPACING = 1.25
-end
-TILL_SPACING = TILL_SPACING + EPSILON
+local TILL_SPACING = 4/3
+-- Old TILL_SPACING code; keeping as a reference on how to get this back if it turns out 4/3 is bad
+-- local TILL_SPACING = rawget(GLOBAL, "GetFarmTillSpacing") and GLOBAL.GetFarmTillSpacing()
+-- if type(TILL_SPACING) ~= "number" then
+	-- TILL_SPACING = 1.25
+-- end
+-- TILL_SPACING = TILL_SPACING + EPSILON
 
 local RMB_ACTION_GRID_SPACING = {
 	TILL = TILL_SPACING,
