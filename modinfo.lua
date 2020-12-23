@@ -177,6 +177,16 @@ configuration_options =
 		hover = "Whether to adjust the spacing of the grid based on what object is being placed.\nAllows for optimal grids, but can make it hard to put things just where you want them.",
 	},
 	{
+		name = "ACTION_TILL",
+		label = "Till Grid",
+		options =	{
+						{description = "On", data = true},
+						{description = "Off", data = false},
+					},
+		default = true,	
+		hover = "Whether to use a grid for tilling farm soil.\nAutomatically turned off when using the Snapping Tills mod.",
+	},
+	{
 		name = "SMALLGRIDSIZE",
 		label = "Fine Grid Size",
 		options = smallgridsizeoptions,

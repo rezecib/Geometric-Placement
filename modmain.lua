@@ -13,6 +13,7 @@ images_and_atlases = {
 	"cursor_toggle_icon_num",
 	"placer_toggle_icon",
 	"smart_spacing_toggle_icon",
+	"till_grid_toggle_icon",
 }
 for _,geometry in pairs({"diamond", "square", "flat_hexagon", "pointy_hexagon", "x_hexagon", "z_hexagon"}) do
 	table.insert(images_and_atlases, geometry .. "_geometry")
@@ -469,16 +470,18 @@ local TILL_SPACING = 4/3
 -- end
 -- TILL_SPACING = TILL_SPACING + EPSILON
 
+local ACTION_ENABLED = {}
 local RMB_ACTION_GRID_SPACING = {
 	TILL = TILL_SPACING,
 }
 local function SetGridForRmbAction(action, value)
 	if rawget(GLOBAL.ACTIONS, action) then
+		ACTION_ENABLED[action] = value
 		GLOBAL.ACTIONS[action].tile_placer = value and (action:lower() .. "_actiongridplacer") or nil
 	end
 end
 for action,_ in pairs(RMB_ACTION_GRID_SPACING) do
-	SetGridForRmbAction(action, not HAS_MOD[action])
+	SetGridForRmbAction(action, not HAS_MOD[action] and GetConfig("ACTION_"..action, true, "boolean"))
 end
 
 --[[ Placer Component ]]--
@@ -1683,6 +1686,9 @@ local function PushOptionsScreen()
 		for color_type, color_option in pairs(COLORS) do
 			settings[namelookup[color_type .. "COLOR"]].saved = COLOR_OPTION_LOOKUP[color_option] or color_option
 		end
+		for action, enabled in pairs(ACTION_ENABLED) do
+			settings[namelookup["ACTION_"..action]].saved = enabled
+		end
 		settings[namelookup.TIMEBUDGET].saved = timebudget_percent
 		settings[namelookup.SMALLGRIDSIZE].saved = GRID_SIZES.SMALL
 		settings[namelookup.MEDGRIDSIZE].saved = GRID_SIZES.MED
@@ -1741,6 +1747,10 @@ local function PushOptionsScreen()
 		SMARTSPACING = not SMARTSPACING
 		GRID_DIRTY = true
 		GEOMETRY_DIRTY = true
+	end
+	if not ACTION_ENABLED.TILL then screen.till_grid_button.onclick() end
+	screen.callbacks.till_grid = function()
+		SetGridForRmbAction("TILL", not ACTION_ENABLED.TILL)
 	end
 	screen.refresh:SetSelected(timebudget_percent)
 	screen.callbacks.refresh = SetTimeBudget
