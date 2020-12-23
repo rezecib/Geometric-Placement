@@ -893,7 +893,7 @@ function Placer:OnUpdate(dt)
 		else
 			GRID_ACTION = nil
 		end
-		if spacing > 1 then
+		if spacing >= 1 then
 			-- Divide the optimal spacing evenly to get it in the 0.5-1 range to give more options of where to put things
 			spacing = spacing/math.floor(spacing*2)
 		end
