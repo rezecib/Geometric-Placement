@@ -121,7 +121,7 @@ ModSettings.AddControl = function(modname, control_name, control_desc, default_k
 			label = control_desc,
 			default = default_key,
 			saved = saved_key,
-			value = saved_key,
+			value = saved_key, -- value used for the current, unapplied value in the UI
 		}
 		table.insert(modcontrols[modname], control_data)
 	else --just add in the new description and default key
@@ -145,7 +145,75 @@ ModSettings.AddControl = function(modname, control_name, control_desc, default_k
 	return function(key) return modcontrols_lookup[modname][control_name].saved:lower():byte() == key end
 end
 
+-- The following were not intended as part of the API, but the UI for this has slogged, so
+-- exposing these to allow for external UIs (like Geometric Placement's)
+
+ModSettings.GetControlsForMod = function(modname)
+	local controls = {}
+	for _,control in ipairs(modcontrols[modname] or {}) do 
+		table.insert(controls, {
+			name = control.name,
+			label = control.label,
+			default = control.default,
+			value = control.value
+		})
+	end
+	return controls
+end
+
+local function ReregisterControl(handler, key, down)
+	local handler_fn = handler.fn
+	if handler.event ~= nil then
+		local handler_category = down and "onkeydown" or "onkeyup"
+		TheInput[handler_category]:RemoveHandler(handler)
+	end
+	if key == "" then --this was unbinding the key
+		-- return an "empty" handler that just preserves the callback function
+		return {fn = handler_fn}
+	end
+	local AddKeyHandler = TheInput["AddKey"..(down and "Down" or "Up").."Handler"]
+	return AddKeyHandler(TheInput, key:lower():byte(), handler_fn)
+end
+
+ModSettings.RebindControl = function(modname, control_name, binding)
+	local control_data = modcontrols_lookup[modname] and modcontrols_lookup[modname][control_name]
+	if not control_data then return end
+	control_data.value = binding
+	control_data.saved = binding
+	for _, down in pairs({true, false}) do
+		if control_data[down] then
+			ReregisterControl(control_data[down], binding, down)
+		end
+	end
+	local _print = print
+	print = function() end --janky, but KnownModIndex functions kinda spam the logs
+	local config = KnownModIndex:LoadModConfigurationOptions(modname, true)
+	local settings = {}
+	local namelookup = {} --so we don't have to scan through the options
+	for i,v in ipairs(config) do
+		namelookup[v.name] = i
+		table.insert(settings, {name = v.name, label = v.label, options = v.options, default = v.default, saved = v.saved})
+	end
+	local setting_index = namelookup[control_name]
+	if setting_index == nil then
+		-- Maybe this isn't in the normal mod config; we should save it anyway
+		table.insert(settings, {
+			name = control_name,
+			label = control_data.label or "",
+			options = {},
+			default = control_data.default,
+		})
+		setting_index = #settings
+	end
+	settings[setting_index].saved = control_data.saved
+	--Note: don't need to include options that aren't in the menu,
+	-- because they're already in there from the options load above
+	KnownModIndex:SaveConfigurationOptions(function() end, modname, settings, true)
+	print = _print --restore print functionality!
+end
+	
 --[[ Mod Settings GUI Setup ]]--
+--[[
 --TODO: focus hookups?
 
 -- I believe this should allow them to be translated
@@ -242,22 +310,14 @@ local function BuildModSelectionPanel(self, root, mod_table, is_controls)
 	-- root.options_scroll_list.bg:SetTint(0,0,1,.5)
 end
 
-local function ReregisterControl(handler, key, down)
-	local handler_fn = handler.fn
-	if handler.event ~= nil then
-		local handler_category = down and "onkeydown" or "onkeyup"
-		TheInput[handler_category]:RemoveHandler(handler)
-	end
-	if key == "" then --this was unbinding the key
-		-- return an "empty" handler that just preserves the callback function
-		return {fn = handler_fn}
-	end
-	local AddKeyHandler = TheInput["AddKey"..(down and "Down" or "Up").."Handler"]
-	return AddKeyHandler(TheInput, key:lower():byte(), handler_fn)
+local OptionsScreen = require("screens/redux/optionsscreen")
+local OptionsScreen_BuildMenu = OptionsScreen._BuildMenu
+function OptionsScreen:_BuildMenu(subscreener, ...)
+	local menu = OptionsScreen_BuildMenu(self, subscreener, ...)
+	local mod_controls_button = subscreener:MenuButton(STRINGS.UI.MAINSCREEN.MODS .. " " .. STRINGS.UI.OPTIONS.CONTROLS, "modcontrols", "tooltip placeholder", self.tooltip)
+	menu:AddCustomItem(mod_controls_button)
+	return menu
 end
-
---[[ -- TODO
-local OptionsScreen = require("screens/optionsscreen")
 local OptionsScreen_ctor = OptionsScreen._ctor
 function OptionsScreen:_ctor(...)
 	local _SetTab = self.SetTab

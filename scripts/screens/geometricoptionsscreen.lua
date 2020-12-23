@@ -5,6 +5,7 @@ local UIAnim = require "widgets/uianim"
 local Widget = require "widgets/widget"
 local TEMPLATES = require "widgets/redux/templates"
 local Spinner = require "widgets/spinner"
+local GeometricControlsScreen = require "screens/geometriccontrolsscreen"
 
 local function AddHoverText(widget, params, labelText)
 	params = params or {}
@@ -27,11 +28,13 @@ local function AddHoverText(widget, params, labelText)
 	widget.text = text
 end
 
-local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, outlined_anims)
+local GeometricOptionsScreen = Class(Screen, function(self, modname, colorname_vectors, outlined_anims)
 	Screen._ctor(self, "GeometricOptionsScreen")
 
 	self.active = true
 	SetPause(true,"pause")
+	
+	self.modname = modname
 	
 	self.togglekey = "B"
 	self.togglekey = self.togglekey:lower():byte()
@@ -342,6 +345,18 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	
 	--[[   Misc Buttons   ]]--
 	
+	self.key_binds_button = self.proot:AddChild(TEMPLATES.StandardButton(
+		function()
+			TheFrontEnd:PushScreen(GeometricControlsScreen(self.modname, self))
+			self:Hide()
+		end,
+		"Keybinds",
+		{100, 50}))
+	self.key_binds_button:SetPosition(-240, 135)
+	if TheInput:ControllerAttached() then
+		self.key_binds_button:Hide()
+	end
+	
 	local toggle_strings = {[true] = "Turn the mod off, except when holding control.",
 							[false]= "Turn the mod on, except when holding control."}
 	local toggle_state = true
@@ -368,12 +383,17 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 		{name="placer", hover="Whether to show the placer.\n(The ghost version of the thing you're placing)"},
 		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2, atlases={"", "_num", ""}},
 		{name="smart_spacing", hover="Whether to adjust the grid spacing based\non what you're trying to place."},
+		{name="till_grid", hover="Whether to snap to a grid when tilling farm soil."},
 	}
 	local function GetAtlasAndTexture(name, atlases, toggle_state)
 		local suffix = atlases ~= nil and atlases[toggle_state+1] or ""
 		return "images/"..name.."_toggle_icon"..suffix..".xml", name.."_toggle_icon"..suffix..".tex"
 	end
+	self.misc_button_layout = {}
+	local button_cols = 3
 	for i,button in ipairs(toggle_buttons) do
+		local imod = (i-1)%button_cols + 1
+		local idiv = math.floor((i-1)/button_cols)+1
 		local btn = button.name.."_button"
 		button.toggle = button.toggle or 1
 		button.toggle_states = button.toggle + 1
@@ -398,8 +418,12 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 				self.callbacks[button.name](button.toggle)
 			end,
 			{offset_y = button.hover:match("\n") and 120 or 90}))
+		if imod == 1 then
+			table.insert(self.misc_button_layout, {})
+		end
+		table.insert(self.misc_button_layout[idiv], self[btn])
 		self[btn].icon:SetScale(.7)
-		self[btn]:SetPosition(75 + 60*i, 10)
+		self[btn]:SetPosition(75 + 75*imod + (idiv > 1 and 32 or 0), 85 - 60*idiv)
 		self[btn].image:SetTint(.5, 1, .5, 1)
 		self[btn].xout = self[btn]:AddChild(Image("images/toggle_x_out.xml", "toggle_x_out.tex"))
 		self[btn].xout:SetScale(.8)
@@ -421,7 +445,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 			0, -- horizontal offset
 			function(selected, old) self.callbacks.refresh(selected) end
 		))
-	self.refresh:SetPosition(205, -60)
+	self.refresh:SetPosition(205, -80)
 	self.subtitle_refresh = self.refresh.label -- also needed for gross fix
 	self.refresh = self.refresh.spinner
 	AddHoverText(self.refresh, {offset_x = -4, offset_y = 50}, "How quickly to refresh the grid.\nTurning it up will make it more responsive, but it may cause lag.")
@@ -528,7 +552,7 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 		end
 	end
 
-	self.toggle_button:SetFocusChangeDir(MOVE_DOWN, self.cursor_button)
+	self.toggle_button:SetFocusChangeDir(MOVE_DOWN, self.placer_button)
 	self.toggle_button:SetFocusChangeDir(MOVE_LEFT, self.geometry_buttons.square)
 	self.toggle_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
 
@@ -580,9 +604,9 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 		self.color_buttons.redgreen:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
 		self.color_buttons.redblue:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
 		self.grid_button:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.redgreen)
-		self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
+		self.color_buttons.blackwhite:SetFocusChangeDir(MOVE_RIGHT, self.smart_spacing_button)
 		self.color_buttons.blackwhiteoutline:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
-		self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhite)
+		self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_buttons.blackwhiteoutline)
 		self.color_buttons.custom:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
 		self.color_spinners.NEARTILE:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
 		self.smallgrid:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.NEARTILE)
@@ -623,10 +647,6 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 		self.color_spinners.NEARTILE:SetFocusChangeDir(MOVE_UP, self.color_buttons.preset)
 		
 		--Colors to misc
-		self.color_spinners.BAD:SetFocusChangeDir(MOVE_RIGHT, self.grid_button)
-		self.grid_button:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BAD)
-		self.color_spinners.BADTILE:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
-		self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BADTILE)
 		self.color_spinners.BADPLACER:SetFocusChangeDir(MOVE_RIGHT, self.refresh)
 		self.refresh:SetFocusChangeDir(MOVE_LEFT, self.color_spinners.BADPLACER)
 		self.color_buttons.preset:SetFocusChangeDir(MOVE_RIGHT, self.smallgrid)
@@ -636,21 +656,32 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 	end
 	
 	--Within misc
-	self.grid_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.grid_button:SetFocusChangeDir(MOVE_RIGHT, self.placer_button)
-	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.placer_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.placer_button:SetFocusChangeDir(MOVE_LEFT, self.grid_button)
-	self.placer_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
-	self.placer_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.cursor_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_LEFT, self.placer_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_RIGHT, self.smart_spacing_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.smart_spacing_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.smart_spacing_button:SetFocusChangeDir(MOVE_LEFT, self.cursor_button)
-	self.smart_spacing_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.refresh:SetFocusChangeDir(MOVE_UP, self.cursor_button)
+	for r, row in pairs(self.misc_button_layout) do
+		for c, btn in pairs(row) do
+			btn:SetFocusChangeDir(MOVE_UP, r == 1 and self.toggle_button or self.misc_button_layout[r-1][c])
+			if r == #self.misc_button_layout then
+				btn:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+				self.refresh:SetFocusChangeDir(MOVE_UP, btn)
+			else
+				btn:SetFocusChangeDir(MOVE_DOWN, self.misc_button_layout[r+1][math.min(c, #self.misc_button_layout[r+1])])
+			end
+			if c == 1 then
+				local color_button
+				if self.colormode == "preset" then
+					color_button = r == 1 and self.color_buttons.redgreen or self.color_buttons.blackwhite
+				else --if self.colormode == "custom" then
+					color_button = r == 1 and self.color_spinners.BAD or self.color_spinners.BADTILE
+				end
+				btn:SetFocusChangeDir(MOVE_LEFT, color_button)
+			else
+				btn:SetFocusChangeDir(MOVE_LEFT, row[c-1])
+			end
+			if c ~= #row then
+				btn:SetFocusChangeDir(MOVE_RIGHT, row[c+1])
+			end
+		end
+	end
+	
 	self.refresh:SetFocusChangeDir(MOVE_DOWN, self.biggrid)
 	self.smallgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
 	self.smallgrid:SetFocusChangeDir(MOVE_RIGHT, self.medgrid)

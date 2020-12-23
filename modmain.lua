@@ -1662,7 +1662,7 @@ local function PushOptionsScreen()
 		CTRL = not CTRL
 		return
 	end
-	local screen = GeometricOptionsScreen(COLOR_OPTIONS, OUTLINED_OPTIONS)
+	local screen = GeometricOptionsScreen(modname, COLOR_OPTIONS, OUTLINED_OPTIONS)
 	if DST then
 		screen.IsOptionsMenuKey = IsKey.OptionsMenu
 	else
