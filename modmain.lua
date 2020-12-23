@@ -44,6 +44,23 @@ local SpawnPrefab = GLOBAL.SpawnPrefab
 local GeometricOptionsScreen = DST and require("screens/geometricoptionsscreen")
 									or require("screens/geometricoptionsscreen_singleplayer")
 
+local CHECK_MODS = {
+	["workshop-2302837868"] = "TILL",
+}
+local HAS_MOD = {}
+--If the mod is a]ready loaded at this point
+for mod_name, key in pairs(CHECK_MODS) do
+	HAS_MOD[key] = HAS_MOD[key] or (GLOBAL.KnownModIndex:IsModEnabled(mod_name) and mod_name)
+end
+--If the mod hasn't loaded yet
+for k,v in pairs(GLOBAL.KnownModIndex:GetModsToLoad()) do
+	local mod_type = CHECK_MODS[v]
+	if mod_type then
+		HAS_MOD[mod_type] = v
+	end
+end
+
+
 local function PrintCorruptedConfig(configname, badvalue)
 	print("WARNING: mod config value \"" .. configname .. "\" for mod \"" .. modname
 			.. "\" is corrupted; it had unexpected value:", badvalue)
@@ -461,7 +478,7 @@ local function SetGridForRmbAction(action, value)
 	end
 end
 for action,_ in pairs(RMB_ACTION_GRID_SPACING) do
-	SetGridForRmbAction(action, true)
+	SetGridForRmbAction(action, not HAS_MOD[action])
 end
 
 --[[ Placer Component ]]--
