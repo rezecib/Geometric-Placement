@@ -1683,6 +1683,7 @@ local function PushOptionsScreen()
 		settings[namelookup.BUILDGRID].saved = BUILDGRID
 		settings[namelookup.HIDEPLACER].saved = HIDEPLACER
 		settings[namelookup.HIDECURSOR].saved = HIDECURSORQUANTITY and 1 or HIDECURSOR
+		settings[namelookup.SMARTSPACING].saved = SMARTSPACING
 		for color_type, color_option in pairs(COLORS) do
 			settings[namelookup[color_type .. "COLOR"]].saved = COLOR_OPTION_LOOKUP[color_option] or color_option
 		end
