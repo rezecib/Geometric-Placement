@@ -883,8 +883,8 @@ function Placer:OnUpdate(dt)
 				local deployspacing = self.invobject.replica.inventoryitem:DeploySpacingRadius()
 				spacing = deployspacing ~= 0 and deployspacing or spacing
 			end
-			spacing = PLACER_SPACING_OVERRIDES[prefab] or spacing
 		end
+		spacing = PLACER_SPACING_OVERRIDES[prefab] or spacing
 		local agp_index = prefab:find("_actiongridplacer")
 		if agp_index then
 			local action = prefab:sub(1, agp_index-1):upper()

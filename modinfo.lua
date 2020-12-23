@@ -173,7 +173,7 @@ configuration_options =
 						{description = "On", data = true},
 						{description = "Off", data = false},
 					},
-		default = true,	
+		default = false,	
 		hover = "Whether to adjust the spacing of the grid based on what object is being placed.\nAllows for optimal grids, but can make it hard to put things just where you want them.",
 	},
 	{
