@@ -1577,15 +1577,15 @@ if kleifileexists("scripts/components/farmtiller.lua") then
 end
 
 ACTIONS_TO_SNAP = {
-	DEPLOY = true,
+	DEPLOY = function() return true end,
 }
 for action, _ in pairs(RMB_ACTION_GRID_SPACING) do
-	ACTIONS_TO_SNAP[action] = true
+	ACTIONS_TO_SNAP[action] = function() return ACTION_ENABLED[action] end
 end
 ACTION_CODES_TO_SNAP = {}
 for action, _ in pairs(ACTIONS_TO_SNAP) do
 	if rawget(GLOBAL.ACTIONS, action) then
-		ACTION_CODES_TO_SNAP[GLOBAL.ACTIONS[action].code] = true
+		ACTION_CODES_TO_SNAP[GLOBAL.ACTIONS[action].code] = function() return ACTIONS_TO_SNAP[action]() end
 	end
 end
 -- Fixes deploying on clients in DST
@@ -1596,7 +1596,7 @@ if DST then
 	local _SendRPCToServer = GLOBAL.SendRPCToServer
 	function GLOBAL.SendRPCToServer(code, action_code, x, z, ...)
 		if code == GLOBAL.RPC.RightClick -- We don't need ControllerActionButtonDeploy because it grabs the placer's location
-		and ACTION_CODES_TO_SNAP[action_code] and ACTION_ENABLED[action]
+		and ACTION_CODES_TO_SNAP[action_code] and ACTION_CODES_TO_SNAP[action_code]()
 		and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			local ThePlayer = GLOBAL.ThePlayer
 			local activeitem = ThePlayer and ThePlayer.replica
