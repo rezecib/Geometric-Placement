@@ -1569,7 +1569,7 @@ if kleifileexists("scripts/components/farmtiller.lua") then
 	local _FarmTiller_Till = FarmTiller.Till
 	function FarmTiller:Till(pt, doer, ...)
 		-- Filter on ThePlayer to prevent host grid from overriding clients
-		if rawget(GLOBAL, "ThePlayer") == doer and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
+		if rawget(GLOBAL, "ThePlayer") == doer and ACTION_ENABLED.TILL and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			pt = Snap(pt)
 		end
 		return _FarmTiller_Till(self, pt, doer, ...)
@@ -1596,7 +1596,7 @@ if DST then
 	local _SendRPCToServer = GLOBAL.SendRPCToServer
 	function GLOBAL.SendRPCToServer(code, action_code, x, z, ...)
 		if code == GLOBAL.RPC.RightClick -- We don't need ControllerActionButtonDeploy because it grabs the placer's location
-		and ACTION_CODES_TO_SNAP[action_code]
+		and ACTION_CODES_TO_SNAP[action_code] and ACTION_ENABLED[action]
 		and CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 			local ThePlayer = GLOBAL.ThePlayer
 			local activeitem = ThePlayer and ThePlayer.replica
