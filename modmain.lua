@@ -1076,8 +1076,10 @@ function Placer:OnUpdate(dt)
 	if self.fixedcameraoffset ~= nil then
 		local rot = self.fixedcameraoffset - TheCamera:GetHeading() -- rotate against the camera
 		self.inst.Transform:SetRotation(rot)
-		for i, v in ipairs(self.linked) do
-			v.Transform:SetRotation(rot)
+		if not DST then
+			for i, v in ipairs(self.linked) do
+				v.Transform:SetRotation(rot)
+			end
 		end
 		self._rot = rot --#rezecib so the grid placers can test points for this rotation as well
 	end
