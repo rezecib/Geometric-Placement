@@ -80,25 +80,7 @@ local function GetConfig(configname, default, validator)
 	return value
 end
 
-local function GetKeyConfig(configname, default)
-	local value = GetModConfigData(configname)
-	if type(value) == "string" then
-		if value:len() == 0 then
-			return -1
-		end
-		return value:lower():byte()
-	end
-	if type(value) ~= "number" then
-		PrintCorruptedConfig(configname, value)
-		return default:lower():byte()
-	end
-	return value
-end
-
 local CTRL = GetConfig("CTRL", false, "boolean")
-local KEYBOARDTOGGLEKEY = GetKeyConfig("KEYBOARDTOGGLEKEY", "B")
-local GEOMETRYTOGGLEKEY = GetKeyConfig("GEOMETRYTOGGLEKEY", "V")
-local SNAPGRIDKEY = GetKeyConfig("SNAPGRIDKEY", "")
 local SHOWMENU = GetConfig("SHOWMENU", true, "boolean")
 local BUILDGRID = GetConfig("BUILDGRID", true, "boolean")
 local HIDEPLACER = GetConfig("HIDEPLACER", false, "boolean")
@@ -190,10 +172,7 @@ local HIDECURSORQUANTITY = HIDECURSOR == 1
 local HIDECURSOR = HIDECURSOR ~= false
 local REDUCECHESTSPACING = GetConfig("REDUCECHESTSPACING", true, "boolean")
 
-local ModSettings = nil
-if DST then
-	ModSettings = require("tools/modsettings")
-end
+local ModSettings = require("tools/modsettings")
 
 --[[ Coordinate Systems ]]--
 -- The idea of the geometries is that there's an abstract "lattice space", which is a normal grid.
@@ -1579,23 +1558,23 @@ if kleifileexists("scripts/components/farmtiller.lua") then
 	end
 end
 
-ACTIONS_TO_SNAP = {
-	DEPLOY = function() return true end,
-}
-for action, _ in pairs(RMB_ACTION_GRID_SPACING) do
-	ACTIONS_TO_SNAP[action] = function() return ACTION_ENABLED[action] end
-end
-ACTION_CODES_TO_SNAP = {}
-for action, _ in pairs(ACTIONS_TO_SNAP) do
-	if rawget(GLOBAL.ACTIONS, action) then
-		ACTION_CODES_TO_SNAP[GLOBAL.ACTIONS[action].code] = function() return ACTIONS_TO_SNAP[action]() end
-	end
-end
 -- Fixes deploying on clients in DST
 -- This feels really hackish...... but there doesn't seem to be a better way to do it,
 --  since this is directly called from the monstrous PlayerController functions
 --  (PlayerController:OnRightClick and PlayerController:DoControllerActionButton)
 if DST then
+	local ACTIONS_TO_SNAP = {
+		DEPLOY = function() return true end,
+	}
+	for action, _ in pairs(RMB_ACTION_GRID_SPACING) do
+		ACTIONS_TO_SNAP[action] = function() return ACTION_ENABLED[action] end
+	end
+	local ACTION_CODES_TO_SNAP = {}
+	for action, _ in pairs(ACTIONS_TO_SNAP) do
+		if rawget(GLOBAL.ACTIONS, action) then
+			ACTION_CODES_TO_SNAP[GLOBAL.ACTIONS[action].code] = function() return ACTIONS_TO_SNAP[action]() end
+		end
+	end
 	local _SendRPCToServer = GLOBAL.SendRPCToServer
 	function GLOBAL.SendRPCToServer(code, action_code, x, z, ...)
 		if code == GLOBAL.RPC.RightClick -- We don't need ControllerActionButtonDeploy because it grabs the placer's location
@@ -1622,12 +1601,12 @@ end
 --[[ Menu/Option Systems ]]--
 
 -- We want to make sure that chatting, or being in menus, etc, doesn't toggle
-local function IsDefaultScreen()
-	return GetPlayer().components.playercontroller:IsEnabled()
-end
 local function GetActiveScreenName()
 	local screen = GLOBAL.TheFrontEnd:GetActiveScreen()
 	return screen and screen.name or ""
+end
+local function IsDefaultScreen()
+	return GetPlayer().components.playercontroller:IsEnabled() and GetActiveScreenName():find("HUD")
 end
 local function IsScoreboardScreen()
 	return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
@@ -1666,11 +1645,7 @@ local function PushOptionsScreen()
 		return
 	end
 	local screen = GeometricOptionsScreen(modname, COLOR_OPTIONS, OUTLINED_OPTIONS)
-	if DST then
-		screen.IsOptionsMenuKey = IsKey.OptionsMenu
-	else
-		screen.togglekey = KEYBOARDTOGGLEKEY
-	end
+	screen.IsOptionsMenuKey = IsKey.OptionsMenu
 	screen.callbacks.save = function()
 		local _print = GLOBAL.print
 		GLOBAL.print = function() end --janky, but KnownModIndex functions kinda spam the logs
@@ -1752,9 +1727,11 @@ local function PushOptionsScreen()
 		GRID_DIRTY = true
 		GEOMETRY_DIRTY = true
 	end
-	if not ACTION_ENABLED.TILL then screen.till_grid_button.onclick() end
-	screen.callbacks.till_grid = function()
-		SetGridForRmbAction("TILL", not ACTION_ENABLED.TILL)
+	if screen.till_grid_button then
+		if not ACTION_ENABLED.TILL then screen.till_grid_button.onclick() end
+		screen.callbacks.till_grid = function()
+			SetGridForRmbAction("TILL", not ACTION_ENABLED.TILL)
+		end
 	end
 	screen.refresh:SetSelected(timebudget_percent)
 	screen.callbacks.refresh = SetTimeBudget
@@ -1774,110 +1751,79 @@ local function SwapGeometry()
 	SAVED_GEOMETRY_NAME = SAVED_LAST_GEOMETRY_NAME
 	SAVED_LAST_GEOMETRY_NAME = _SAVED_GEOMETRY_NAME
 end
-if DST then
-	IsKey.OptionsMenu = ModSettings.AddControl(
-		modname,
-		"KEYBOARDTOGGLEKEY",
-		"Options Menu",
-		"B",
-		function()
-			if IsDefaultScreen() then
-				if ignore_key then
-					ignore_key = false
-				else
-					PushOptionsScreen()				
-				end
+IsKey.OptionsMenu = ModSettings.AddControl(
+	modname,
+	"KEYBOARDTOGGLEKEY",
+	"Options Menu",
+	"B",
+	function()
+		if IsDefaultScreen() then
+			if ignore_key then
+				ignore_key = false
+			else
+				PushOptionsScreen()				
 			end
-		end,
-		false
-	)
-	ModSettings.AddControl(
-		modname,
-		"GEOMETRYTOGGLEKEY",
-		"Toggle Geometry",
-		"V",
-		function()
-			if IsDefaultScreen() then
-				SwapGeometry()
-			end
-		end,
-		false
-	)
-	ModSettings.AddControl(
-		modname,
-		"SNAPGRIDKEY",
-		"Snap Grid",
-		"",
-		function ()
-			if IsDefaultScreen() then
-				SnapGrid()
-			end
-		end,
-		false
-	)
-else
-	if KEYBOARDTOGGLEKEY >= 0 then
-		TheInput:AddKeyUpHandler(KEYBOARDTOGGLEKEY,
-			function()
-				if IsDefaultScreen() then
-					if ignore_key then
-						ignore_key = false
-					else
-						PushOptionsScreen()				
-					end
-				end
-			end)
-	end
-	if GEOMETRYTOGGLEKEY >= 0 then
-		TheInput:AddKeyUpHandler(GEOMETRYTOGGLEKEY,
-			function()
-				if IsDefaultScreen() then
-					SwapGeometry()
-				end
-			end)
-	end
-	if SNAPGRIDKEY >= 0 then
-		TheInput:AddKeyUpHandler(SNAPGRIDKEY,
-			function()
-				if IsDefaultScreen() then
-					SnapGrid()
-				end
-			end
-		)
-	end
-end
+		end
+	end,
+	false
+)
+ModSettings.AddControl(
+	modname,
+	"GEOMETRYTOGGLEKEY",
+	"Toggle Geometry",
+	"V",
+	function()
+		if IsDefaultScreen() then
+			SwapGeometry()
+		end
+	end,
+	false
+)
+ModSettings.AddControl(
+	modname,
+	"SNAPGRIDKEY",
+	"Snap Grid",
+	"",
+	function ()
+		if IsDefaultScreen() then
+			SnapGrid()
+		end
+	end,
+	false
+)
 
 -- Controller controls
 -- This is pressing the right stick in
 -- CONTROL_MENU_MISC_3 is the same thing as CONTROL_OPEN_DEBUG_MENU
 -- CONTROL_MENU_MISC_4 is the right stick click
-if KEYBOARDTOGGLEKEY ~= "None" then
-	TheInput:AddControlHandler(DST and
-		GLOBAL.CONTROL_MENU_MISC_3 or
-		GLOBAL.CONTROL_OPEN_DEBUG_MENU,
-		DST and 
-		function(down)
-			-- In DST, only let them do it on the scoreboard screen
-			if not down and IsScoreboardScreen() then
-				local ss = GLOBAL.TheFrontEnd.screenstack
-				ss[#ss]:ClearFocus()
-				PushOptionsScreen()
-			end
-		end or function(down)
-			-- In single-player, let them do it on the main screen
-			if not down and IsDefaultScreen() then
-				PushOptionsScreen()
-			end
-		end)
+local function IsOptionsMenuBound()
+	return not IsKey.OptionsMenu()
+end
+TheInput:AddControlHandler(DST and
+	GLOBAL.CONTROL_MENU_MISC_3 or
+	GLOBAL.CONTROL_OPEN_DEBUG_MENU,
+	DST and 
+	function(down)
+		-- In DST, only let them do it on the scoreboard screen
+		if IsOptionsMenuBound() and not down and IsScoreboardScreen() then
+			local ss = GLOBAL.TheFrontEnd.screenstack
+			ss[#ss]:ClearFocus()
+			PushOptionsScreen()
+		end
+	end or function(down)
+		-- In single-player, let them do it on the main screen
+		if IsOptionsMenuBound() and not down and IsDefaultScreen() then
+			PushOptionsScreen()
+		end
+	end)
 
-	if DST then
-		AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)
-			local OldGetHelpText = PlayerStatusScreen.GetHelpText
-			function PlayerStatusScreen:GetHelpText()
-				local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
-				return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
-					.. control_string .. OldGetHelpText(self)
-			end
-		end)
-	end
+if DST then
+	AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)
+		local OldGetHelpText = PlayerStatusScreen.GetHelpText
+		function PlayerStatusScreen:GetHelpText()
+			local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
+			return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
+				.. control_string .. OldGetHelpText(self)
+		end
+	end)
 end

@@ -5,6 +5,7 @@ local ImageButton = require "widgets/imagebutton"
 local UIAnim = require "widgets/uianim"
 local Widget = require "widgets/widget"
 local Spinner = require "widgets/spinner"
+local GeometricControlsScreen = require "screens/geometriccontrolsscreen_singleplayer"
 
 local function AddHoverText(btn, params, labelText)
 	params.font = params.font or BUTTONFONT
@@ -203,7 +204,7 @@ local TEMPLATES = {
 	end,
 }
 
-local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, outlined_anims)
+local GeometricOptionsScreen = Class(Screen, function(self, modname, colorname_vectors, outlined_anims)
 	Screen._ctor(self, "GeometricOptionsScreen")
 
 	self.active = true
@@ -297,7 +298,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.subtitle_misc:SetString("Other")
 
     self.subtitle_refresh = self.proot:AddChild(Text(BUTTONFONT, 22))
-    self.subtitle_refresh:SetPosition(150, -55, 0)
+    self.subtitle_refresh:SetPosition(150, -65, 0)
     self.subtitle_refresh:SetString("Refresh Speed:")
 
     self.subtitle_gridsize = self.proot:AddChild(Text(BUTTONFONT, 22))
@@ -305,17 +306,15 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
     self.subtitle_gridsize:SetString("Grid Sizes")
 
     self.subtitle_gridsize1 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize1:SetPosition(125, -120, 0)
+    self.subtitle_gridsize1:SetPosition(145, -120, 0)
     self.subtitle_gridsize1:SetString("Fine")
 
     self.subtitle_gridsize2 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize2:SetPosition(178, -120, 0)
+    self.subtitle_gridsize2:SetPosition(205, -120, 0)
     self.subtitle_gridsize2:SetString("Wall")
 	
-	-- TODO: adjust positioning
-	
     self.subtitle_gridsize3 = self.proot:AddChild(Text(BUTTONFONT, 18))
-    self.subtitle_gridsize3:SetPosition(284, -120, 0)
+    self.subtitle_gridsize3:SetPosition(265, -120, 0)
     self.subtitle_gridsize3:SetString("Turf")
 
 	-- self.horizontal_line = self.proot:AddChild(Image("images/ui.xml", "line_horizontal_6.tex"))
@@ -518,6 +517,20 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	
 	--[[   Misc Buttons   ]]--
 	
+	self.key_binds_button = self.proot:AddChild(TEMPLATES.Button(
+		"Keybinds",
+		function()
+			TheFrontEnd:PushScreen(GeometricControlsScreen(modname, self, TEMPLATES))
+			self:Hide()
+		end))
+	self.key_binds_button:SetPosition(-240, 135)
+	self.key_binds_button.image:SetScale(0.7)
+	self.key_binds_button:SetTextSize(30)
+	self.key_binds_button.image:SetSize(171, 79)
+	if TheInput:ControllerAttached() then
+		self.key_binds_button:Hide()
+	end
+
 	local toggle_strings = {[true] = "Turn the mod off, except when holding control.",
 							[false]= "Turn the mod on, except when holding control."}
 	local toggle_state = true
@@ -543,13 +556,18 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	local toggle_buttons = {
 		{name="grid", hover="Whether to show the build grid."},
 		{name="placer", hover="Whether to show the placer.\n(The ghost version of the thing you're placing)"},
+		{name="smart_spacing", hover="Whether to adjust the grid spacing based\non what you're trying to place."},
 		{name="cursor", hover="Whether to show the item on the cursor,\njust the number, or nothing.", toggle=2, atlases={"", "_num", ""}},
 	}
 	local function GetAtlasAndTexture(name, atlases, toggle_state)
 		local suffix = atlases ~= nil and atlases[toggle_state+1] or ""
 		return "images/"..name.."_toggle_icon"..suffix..".xml", name.."_toggle_icon"..suffix..".tex"
 	end
+	self.misc_button_layout = {}
+	local button_cols = 2
 	for i,button in ipairs(toggle_buttons) do
+		local imod = (i-1)%button_cols + 1
+		local idiv = math.floor((i-1)/button_cols)+1
 		local btn = button.name.."_button"
 		button.toggle = button.toggle or 1
 		button.toggle_states = button.toggle + 1
@@ -574,8 +592,12 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 				self.callbacks[button.name](button.toggle)
 			end,
 			{offset_y=45}))
+		if imod == 1 then
+			table.insert(self.misc_button_layout, {})
+		end
+		table.insert(self.misc_button_layout[idiv], self[btn])
 		self[btn].icon:SetScale(.7)
-		self[btn]:SetPosition(75 + 65*i, 10)
+		self[btn]:SetPosition(85 + 80*imod, 85 - 55*idiv)
 		self[btn].image:SetTint(.5, 1, .5, 1)
 		self[btn].xout = self[btn]:AddChild(Image("images/toggle_x_out.xml", "toggle_x_out.tex"))
 		self[btn].xout:SetScale(.8)
@@ -591,7 +613,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.refresh:SetTextColour(0,0,0,1)
 	self.refresh:SetScale(.6)
 	self.refresh.OnChanged = function(_, data) self.callbacks.refresh(data) end
-	self.refresh:SetPosition(250, -55)
+	self.refresh:SetPosition(250, -65)
 	local params = { size = 22, offset_x = -4/.6, offset_y = 42/.6 }
 	AddHoverText(self.refresh, params, "How quickly to refresh the grid.\nTurning it up will make it more responsive, but it may cause lag.")
 	self.refresh.hovertext:SetScale(1/.6)
@@ -604,7 +626,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.smallgrid:SetScale(.28, .6)
 	self.smallgrid.text:SetScale(2.1, 1)
 	self.smallgrid.OnChanged = function(_, data) self.callbacks.gridsize("SMALL", data) end
-	self.smallgrid:SetPosition(125, -145)
+	self.smallgrid:SetPosition(145, -145)
 	local medgridsizeoptions = {}
 	for i=0,10 do medgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.medgrid = self.proot:AddChild(Spinner(medgridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
@@ -612,16 +634,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.medgrid:SetScale(.28, .6)
 	self.medgrid.text:SetScale(2.1, 1)
 	self.medgrid.OnChanged = function(_, data) self.callbacks.gridsize("MED", data) end
-	self.medgrid:SetPosition(178, -145)
-	-- TODO: fix positioning of grid size options now that flood grid is gone
-	-- local floodgridsizeoptions = {}
-	-- for i=0,10 do floodgridsizeoptions[i+1] = {text=""..(i).."", data=i} end
-	-- self.floodgrid = self.proot:AddChild(Spinner(floodgridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
-	-- self.floodgrid:SetTextColour(0,0,0,1)
-	-- self.floodgrid:SetScale(.28, .6)
-	-- self.floodgrid.text:SetScale(2.1, 1)
-	-- self.floodgrid.OnChanged = function(_, data) self.callbacks.gridsize(3, data) end
-	-- self.floodgrid:SetPosition(231, -145)
+	self.medgrid:SetPosition(205, -145)
 	local biggridsizeoptions = {}
 	for i=0,5 do biggridsizeoptions[i+1] = {text=""..(i).."", data=i} end
 	self.biggrid = self.proot:AddChild(Spinner(biggridsizeoptions, 200, 40, {font=DEFAULTFONT,size=35}, false, nil, nil, true, nil, nil, .76, .68))
@@ -629,7 +642,7 @@ local GeometricOptionsScreen = Class(Screen, function(self, colorname_vectors, o
 	self.biggrid:SetScale(.28, .6)
 	self.biggrid.text:SetScale(2.1, 1)
 	self.biggrid.OnChanged = function(_, data) self.callbacks.gridsize("BIG", data) end
-	self.biggrid:SetPosition(284, -145)
+	self.biggrid:SetPosition(265, -145)
 	
 	TheInputProxy:SetCursorVisible(true)
 	
@@ -824,17 +837,32 @@ function GeometricOptionsScreen:SetUpFocusHookups()
 	end
 	
 	--Within misc
-	self.grid_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.grid_button:SetFocusChangeDir(MOVE_RIGHT, self.placer_button)
-	self.grid_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.placer_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.placer_button:SetFocusChangeDir(MOVE_LEFT, self.grid_button)
-	self.placer_button:SetFocusChangeDir(MOVE_RIGHT, self.cursor_button)
-	self.placer_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.cursor_button:SetFocusChangeDir(MOVE_UP, self.toggle_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_LEFT, self.placer_button)
-	self.cursor_button:SetFocusChangeDir(MOVE_DOWN, self.refresh)
-	self.refresh:SetFocusChangeDir(MOVE_UP, self.cursor_button)
+	for r, row in pairs(self.misc_button_layout) do
+		for c, btn in pairs(row) do
+			btn:SetFocusChangeDir(MOVE_UP, r == 1 and self.toggle_button or self.misc_button_layout[r-1][c])
+			if r == #self.misc_button_layout then
+				btn:SetFocusChangeDir(MOVE_DOWN, self.refresh)
+				self.refresh:SetFocusChangeDir(MOVE_UP, btn)
+			else
+				btn:SetFocusChangeDir(MOVE_DOWN, self.misc_button_layout[r+1][math.min(c, #self.misc_button_layout[r+1])])
+			end
+			if c == 1 then
+				local color_button
+				if self.colormode == "preset" then
+					color_button = r == 1 and self.color_buttons.redgreen or self.color_buttons.blackwhite
+				else --if self.colormode == "custom" then
+					color_button = r == 1 and self.color_spinners.BAD or self.color_spinners.BADTILE
+				end
+				btn:SetFocusChangeDir(MOVE_LEFT, color_button)
+			else
+				btn:SetFocusChangeDir(MOVE_LEFT, row[c-1])
+			end
+			if c ~= #row then
+				btn:SetFocusChangeDir(MOVE_RIGHT, row[c+1])
+			end
+		end
+	end
+	
 	self.refresh:SetFocusChangeDir(MOVE_DOWN, self.biggrid)
 	self.smallgrid:SetFocusChangeDir(MOVE_UP, self.refresh)
 	self.smallgrid:SetFocusChangeDir(MOVE_RIGHT, self.medgrid)
@@ -867,7 +895,7 @@ end
 function GeometricOptionsScreen:OnRawKey(key, down)
 	if GeometricOptionsScreen._base.OnRawKey(self, key, down) then return true end
 	
-	if key == self.togglekey and not down then
+	if self.IsOptionsMenuKey(key) and not down then	
 		self.callbacks.ignore()
 		self:Close()
 		return true
