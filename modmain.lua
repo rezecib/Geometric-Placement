@@ -913,6 +913,7 @@ function Placer:OnUpdate(dt)
 		if not self.gridinst then
 			self.gridinst = self:MakeGridInst()
 		end
+		self:SetCursorVisibility(true)
 	end
 	if COLORS.NEARTILE ~= "hidden" and not self.snap_to_tile then
 		if self.tileinst == nil then
