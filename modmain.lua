@@ -1606,7 +1606,7 @@ local function GetActiveScreenName()
 	return screen and screen.name or ""
 end
 local function IsDefaultScreen()
-	return GetPlayer().components.playercontroller:IsEnabled() and GetActiveScreenName():find("HUD")
+	return GetActiveScreenName():find("HUD") and GetPlayer() and GetPlayer().components.playercontroller:IsEnabled()
 end
 local function IsScoreboardScreen()
 	return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
