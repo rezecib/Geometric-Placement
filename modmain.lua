@@ -1621,12 +1621,12 @@ end
 --[[ Menu/Option Systems ]]--
 
 -- We want to make sure that chatting, or being in menus, etc, doesn't toggle
+local function IsDefaultScreen()
+	return GetPlayer().components.playercontroller:IsEnabled()
+end
 local function GetActiveScreenName()
 	local screen = GLOBAL.TheFrontEnd:GetActiveScreen()
 	return screen and screen.name or ""
-end
-local function IsDefaultScreen()
-	return GetActiveScreenName():find("HUD") ~= nil
 end
 local function IsScoreboardScreen()
 	return GetActiveScreenName():find("PlayerStatusScreen") ~= nil
