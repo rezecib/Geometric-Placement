@@ -888,7 +888,14 @@ function Placer:OnUpdate(dt)
 			self.force_square_geometry = true
 		end
 		SetGeometry(geometry, spacing, grid_type)
+		-- Bake in a bunch of global variables that get set by SetGeometry
+		-- This defends against multiple grids existing simultaneously
 		self.geometry = GEOMETRIES[GEOMETRY_NAME]
+		self.grid_size = GRID_SIZE
+		self.col_offset = COL_OFFSET
+		self.row_offset = ROW_OFFSET
+		self.origin_offset = ORIGIN_OFFSET
+		self.ToLatticeCoords = ToLatticeCoords
 		if not self.gridinst then
 			self.gridinst = self:MakeGridInst()
 		end
@@ -1143,13 +1150,13 @@ function Placer:OnUpdate(dt)
 	local hadgrid = self.build_grid ~= nil
 	if not BUILDGRID then return end
 	if pt and pt.x and pt.z and not(hadgrid and lastpt and lastpt.x == pt.x and lastpt.z == pt.z) then
-		local cx, cz = ToLatticeCoords(pt)
-		local start_row, end_row = self.geometry.GetRowRange(GRID_SIZE)
+		local cx, cz = self.ToLatticeCoords(pt)
+		local start_row, end_row = self.geometry.GetRowRange(self.grid_size)
 		if hadgrid then --We can just move the existing grid, or some of its points
-			local lx, lz = ToLatticeCoords(lastpt)
+			local lx, lz = self.ToLatticeCoords(lastpt)
 			local dx, dz = cx - lx, cz - lz --the change in lattice coordinates since last update
 			local sx, sz = dx < 0 and -1 or 1, dz < 0 and -1 or 1 --the sign of the change
-			if self.geometry.HasOverlap(dx, dz, GRID_SIZE) then
+			if self.geometry.HasOverlap(dx, dz, self.grid_size) then
 				--First, remove all the points that only existed around the old position
 				local to_move_list = {} --to store points that need to be moved
 				for bgx = lx+start_row, lx+end_row do
@@ -1176,31 +1183,31 @@ function Placer:OnUpdate(dt)
 				
 				--Then, move them all to points that only exist around the new position, and refresh
 				for bgx = cx+start_row, cx+end_row do
-					local rowpt = COL_OFFSET*bgx + ORIGIN_OFFSET
+					local rowpt = self.col_offset*bgx + self.origin_offset
 					local start_col_new, end_col_new = unpack(self.rowbounds[bgx-cx])
 					if lx+start_row <= bgx and bgx <= lx+end_row then --if this row appears in both
 						--then we need to figure out which columns need to be added
 						local start_col_old, end_col_old = unpack(self.rowbounds[bgx-lx])
 						--there might be some columns at the start
 						for bgz = cz+start_col_new, math.min(cz+end_col_new, lz+start_col_old-1) do
-							self:BuildGridPoint(bgx, bgz, rowpt + ROW_OFFSET*bgz, table.remove(to_move_list))
+							self:BuildGridPoint(bgx, bgz, rowpt + self.row_offset*bgz, table.remove(to_move_list))
 						end
 						--and there might be some columns at the end
 						for bgz = math.max(lz+end_col_old+1, cz+start_col_new), cz+end_col_new do
-							self:BuildGridPoint(bgx, bgz, rowpt + ROW_OFFSET*bgz, table.remove(to_move_list))
+							self:BuildGridPoint(bgx, bgz, rowpt + self.row_offset*bgz, table.remove(to_move_list))
 						end
 					else -- this is an new row, we will add all of its points
 						self.build_grid[bgx] = {}
 						self.build_grid_positions[bgx] = {}
 						for bgz = cz+start_col_new, cz+end_col_new do
-							self:BuildGridPoint(bgx, bgz, rowpt + ROW_OFFSET*bgz, table.remove(to_move_list))
+							self:BuildGridPoint(bgx, bgz, rowpt + self.row_offset*bgz, table.remove(to_move_list))
 						end
 					end
 				end
 			else
 				--There's no overlap, we can just shift each point
 				-- Shift lattice coords by dx, dz, and world coords by this translation
-				local translation = COL_OFFSET*dx + ROW_OFFSET*dz
+				local translation = self.col_offset*dx + self.row_offset*dz
 				for bgx = lx+start_row, lx+end_row do
 					if bgx+dx < lx+start_row or lx+end_row < bgx+dx then
 						--this row only exists in the new grid, and will need to be made
@@ -1230,11 +1237,11 @@ function Placer:OnUpdate(dt)
 			for bgx = cx+start_row, cx+end_row do
 				self.build_grid[bgx] = {}
 				self.build_grid_positions[bgx] = {}
-				local rowpt = COL_OFFSET*bgx + ORIGIN_OFFSET
-				local start_col, end_col = self.geometry.GetColRangeForRow(bgx-cx, GRID_SIZE)
+				local rowpt = self.col_offset*bgx + self.origin_offset
+				local start_col, end_col = self.geometry.GetColRangeForRow(bgx-cx, self.grid_size)
 				self.rowbounds[bgx-cx] = {start_col, end_col} --store for moving later
 				for bgz = cz+start_col, cz+end_col do
-					self:BuildGridPoint(bgx, bgz, rowpt + ROW_OFFSET*bgz)
+					self:BuildGridPoint(bgx, bgz, rowpt + self.row_offset*bgz)
 				end
 			end
 		end
@@ -1330,7 +1337,6 @@ local function PlacerPostInit(self)
 	-- if it pops one out and it's not in the grid, no big deal, that's way faster than testing the point
 	self.refresh_queue = nil
 	self.lastpt = nil
-	self.geometry = GEOMETRIES[SAVED_GEOMETRY_NAME]
 	self.placertype = "buildgridplacer"
 	self.waiting_for_geometry = true -- to prevent the wrong geometry being used on the first update
 	self.cursor_visible = true
