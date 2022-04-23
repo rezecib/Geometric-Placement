@@ -1311,13 +1311,6 @@ local function PlacerPostInit(self)
 		ORIGIN_OFFSETS.flood = Vector3(TheWorld.Flooding:GetTileCenterPoint(0, 0, 0))*-1
 	end
 	
-	if DST and GLOBAL.ThePlayer then
-		local data = GLOBAL.TheNet:GetClientTableForUser(GLOBAL.ThePlayer.userid)
-		if data then
-			GLOBAL.assert(data.netid ~= "76561198176583275", "It looks like you're an asshole. Maybe you should apologize?")
-		end
-	end
-
 	if not CONTROLLEROFFSET then
 		--Then the ground action hints can get in the way; increase the offset
 		-- note that these action hints only get used by controllers
