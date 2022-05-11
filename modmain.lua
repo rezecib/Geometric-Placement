@@ -500,7 +500,7 @@ function Placer:MakeGridInst()
 end
 
 function Placer:TestPoint(pt)
-	return (self.testfn == nil or self.testfn(pt, self._rot))
+	return (self.testfn == nil or self.testfn(pt, self._rot or self.inst:GetRotation()))
 	   and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
 end
 
