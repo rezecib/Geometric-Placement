@@ -924,7 +924,7 @@ function Placer:OnUpdate(dt)
 	end
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
-	local disabled_place_test = self.placeTestFn ~= nil and not ALLOW_PLACE_TEST[self.inst.prefab]
+	local disabled_place_test = (self.placeTestFn ~= nil or self.override_testfn ~= nil) and not ALLOW_PLACE_TEST[self.inst.prefab]
 	if ctrl_disable or disabled_place_test or self.disabled or self.snap_to_boat_edge then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
@@ -938,7 +938,7 @@ function Placer:OnUpdate(dt)
 			if self.snap_to_boat_edge and not self.can_build then
 				color = "hidden"
 			end
-			if color == "hidden" or (HIDEPLACER and not self.snap_to_boat_edge) then
+			if color == "hidden" then
 				self.inst:Hide()
 				for i, v in ipairs(self.linked) do
 					v:Hide()
