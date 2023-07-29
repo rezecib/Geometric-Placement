@@ -925,7 +925,7 @@ function Placer:OnUpdate(dt)
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
 	local disabled_place_test = self.placeTestFn ~= nil and not ALLOW_PLACE_TEST[self.inst.prefab]
-	if ctrl_disable or disabled_place_test or self.disabled then
+	if ctrl_disable or disabled_place_test or self.disabled or self.snap_to_boat_edge then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
 		self.gridinst:Hide()
@@ -935,7 +935,10 @@ function Placer:OnUpdate(dt)
 		if not (ctrl_disable or self.disabled) then
 			-- if we got disabled by the placeTestFn, then still use the chosen color scheme
 			local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
-			if HIDEPLACER or color == "hidden" then
+			if self.snap_to_boat_edge and not self.can_build then
+				color = "hidden"
+			end
+			if color == "hidden" or (HIDEPLACER and not self.snap_to_boat_edge) then
 				self.inst:Hide()
 				for i, v in ipairs(self.linked) do
 					v:Hide()
@@ -1463,6 +1466,14 @@ local function default_test(inst, pt)
 	return false
 end
 
+local function CanSnapDeployable(inst, mode)
+	local DEPLOYMODE = GLOBAL.DEPLOYMODE
+	if mode == DEPLOYMODE.CUSTOM then
+		return inst:HasTag("deployedplant")
+	end
+	return mode ~= DEPLOYMODE.WALL and mode ~= DEPLOYMODE.TURF
+end
+
 -- Rewrote this a bit to no longer fully replace the old functions
 -- instead, it just modifies the point that gets passed to them
 local function DeployablePostInit(self)
@@ -1470,7 +1481,7 @@ local function DeployablePostInit(self)
 		local continue = false
 		local grid_type = "default" --to remove when sandbag fix isn't needed
 		if DST then
-			if self.mode ~= GLOBAL.DEPLOYMODE.WALL and self.mode ~= GLOBAL.DEPLOYMODE.TURF then
+			if CanSnapDeployable(self.inst, self.mode) then
 				continue = true
 			end
 		else
@@ -1537,7 +1548,7 @@ local function InventoryItemReplicaPostConstruct(self)
 	local OldCanDeploy = self.CanDeploy
 	local function NewCanDeploy(self, pt, mouseover, ...)
 		local mode = self.classified and self.classified.deploymode:value() or nil
-		if mode ~= GLOBAL.DEPLOYMODE.WALL and mode ~= GLOBAL.DEPLOYMODE.TURF then
+		if CanSnapDeployable(self.inst, mode) then
 			if CTRL == TheInput:IsKeyDown(KEY_CTRL) then
 				pt = Snap(pt)
 			end
