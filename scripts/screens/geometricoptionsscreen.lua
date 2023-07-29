@@ -760,6 +760,11 @@ function GeometricOptionsScreen:OnBecomeActive()
 	GeometricOptionsScreen._base.OnBecomeActive(self)
 	-- Hide the topfade, it'll obscure the pause menu if paused during fade. Fade-out will re-enable it
 	TheFrontEnd:HideTopFade()
+	SetAutopaused(true)
+end
+
+function GeometricOptionsScreen:OnBecomeInactive()
+	SetAutopaused(false)
 end
 
 return GeometricOptionsScreen
