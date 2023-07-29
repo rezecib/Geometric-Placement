@@ -107,6 +107,7 @@ SetTimeBudget(TIMEBUDGET)
 local ORIGIN_OFFSETS = {
 	default = 0,
 	wall = 0.5,
+	snaptogrid = 0,
 	-- These two might depend on map size, so they get acquired in PlacerPostInit
 	flood = -1,
 	tile = -2,
@@ -274,6 +275,7 @@ local Snap
 
 local SPACING_BY_TYPE = {
 	wall = 1,
+	snaptogrid = 1,
 	flood = 2,
 	tile = 4,
 }
@@ -878,6 +880,9 @@ function Placer:OnUpdate(dt)
 		end
 		if self.snap_to_meters then
 			grid_type = "wall"
+			self.force_square_geometry = true
+		elseif self.snaptogrid then
+			grid_type = "snaptogrid"
 			self.force_square_geometry = true
 		elseif self.snap_to_flood then
 			grid_type = "flood"
