@@ -1798,10 +1798,10 @@ ModSettings.AddControl(
 local function IsOptionsMenuBound()
 	return not IsKey.OptionsMenu()
 end
-TheInput:AddControlHandler(DST and
+local controller_control = DST and
 	GLOBAL.CONTROL_MENU_MISC_3 or
-	GLOBAL.CONTROL_OPEN_DEBUG_MENU,
-	DST and 
+	GLOBAL.CONTROL_OPEN_DEBUG_MENU
+local controller_control_handler = DST and
 	function(down)
 		-- In DST, only let them do it on the scoreboard screen
 		if IsOptionsMenuBound() and not down and IsScoreboardScreen() then
@@ -1814,15 +1814,24 @@ TheInput:AddControlHandler(DST and
 		if IsOptionsMenuBound() and not down and IsDefaultScreen() then
 			PushOptionsScreen()
 		end
-	end)
+	end
+TheInput:AddControlHandler(controller_control, controller_control_handler)
 
 if DST then
-	AddClassPostConstruct("screens/playerstatusscreen", function(PlayerStatusScreen)
-		local OldGetHelpText = PlayerStatusScreen.GetHelpText
-		function PlayerStatusScreen:GetHelpText()
-			local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
-			return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
-				.. control_string .. OldGetHelpText(self)
+	local PlayerStatusScreen = require("screens/playerstatusscreen")
+	local PlayerStatusScreen_GetHelpText = PlayerStatusScreen.GetHelpText
+	function PlayerStatusScreen:GetHelpText(...)
+		local control_string = SHOWMENU and " Geometric Placement Options  " or " Toggle Geometric Placement  "
+		return TheInput:GetLocalizedControl(TheInput:GetControllerID(), GLOBAL.CONTROL_MENU_MISC_3)
+			.. control_string .. PlayerStatusScreen_GetHelpText(self, ...)
+	end
+	-- This is only necessary because they added a thing to filter out CONTROL_OPEN_DEBUG_MENU on this screen,
+	-- but CONTROL_OPEN_DEBUG_MENU happens to be the same value as CONTROL_MENU_MISC_3
+	local PlayerStatusScreen_OnControl = PlayerStatusScreen.OnControl
+	function PlayerStatusScreen:OnControl(control, down, ...)
+		if control == controller_control and not down then
+			return false
 		end
-	end)
+		return PlayerStatusScreen_OnControl(self, control, down, ...)
+	end
 end
