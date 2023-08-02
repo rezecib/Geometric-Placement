@@ -763,7 +763,8 @@ function Placer:OnUpdate(dt)
 		if self.tileinst == nil then
 			self.tileinst = SpawnPrefab("gridplacer")
 			self.tileinst:DoTaskInTime(0, function()
-				self.tileinst.AnimState:SetSortOrder(1)
+				self.tileinst.AnimState:SetLayer(GLOBAL.LAYER_WORLD)
+				self.tileinst.AnimState:SetSortOrder(-1)
 				if type(COLORS.NEARTILE) == "table" then
 					self.tileinst.AnimState:SetAddColour(COLORS.NEARTILE.x, COLORS.NEARTILE.y, COLORS.NEARTILE.z, 1)
 				else

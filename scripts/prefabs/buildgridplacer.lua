@@ -20,6 +20,7 @@ local function fn()
 	inst.AnimState:PlayAnimation("anim", true)
     inst.AnimState:SetLightOverride(1)
 	inst.AnimState:SetOrientation(ANIM_ORIENTATION.OnGround)
+	inst.AnimState:SetLayer(LAYER_WORLD_BACKGROUND)
 	
 	inst.Transform:SetScale(1.5,1.5,1.5)
 	
