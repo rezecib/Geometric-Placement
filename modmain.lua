@@ -501,9 +501,9 @@ function Placer:MakeGridInst()
 	return gridinst
 end
 
-function Placer:TestPoint(pt)
+function Placer:TestPoint(inst, pt)
 	return (self.testfn == nil or self.testfn(pt, self._rot or self.inst:GetRotation()))
-	   and (self.placeTestFn == nil or self.placeTestFn(self.inst, pt))
+	   and (self.placeTestFn == nil or self.placeTestFn(inst, pt))
 end
 
 function Placer:RemoveBuildGrid()
@@ -558,7 +558,7 @@ function Placer:RefreshGridPoint(bgx, bgz)
 	local bgp = row[bgz]
 	if bgp == nil then return end
 	local bgpt = self.build_grid_positions[bgx][bgz]
-	local can_build = self:TestPoint(bgpt)
+	local can_build = self:TestPoint(bgp, bgpt)
 	local color = can_build and COLORS.GOOD or COLORS.BAD
 	if self.snap_to_tile then
 		color = can_build and COLORS.GOODTILE or COLORS.BADTILE
@@ -615,6 +615,11 @@ local ALLOW_PLACE_TEST = {
 	pig_guard_tower_placer = true, -- checks ground tile and hides some AnimState symbols
 	
 	-- tar extractor is left out so that it uses the normal placer logic
+	
+	-- DST only
+	yotr_rabbitshrine_placer = true,
+	yotr_fightring_kit_placer = true,
+	-- don't allow moon_device_construction1_placer, it can only be placed on lunar geysers
 }
 -- These lines can be uncommented to run a validator to check for unaccounted-for placers
 -- that define placeTestFn or override_testfn
@@ -656,13 +661,32 @@ AddPrefabPostInit("world", function()
 	end
 end)
 
-local PLACERS_WITH_RADIUS = {
+-- We need to always show these placers because they have a radius in their linked entities,
+-- and the linked entities are children, so they get hidden too if the main one does.
+local PLACERS_ALWAYSHOW = {
 	firesuppressor_placer = true,
 	sprinkler_placer = true,
 	winona_battery_low_placer = true,
 	winona_battery_high_placer = true,
 	winona_catapult_placer = true,
 	winona_spotlight_placer = true,
+	yotr_rabbitshrine_placer = true,
+	-- For this one, the placer itself has a nice radius, so don't hide it
+	yotr_fightring_kit_placer = true,
+}
+
+-- These have the real placer as their main one, but we can't hide it the normal way
+-- because we want to show their linked entities
+local PLACERS_USE_TRANSPARENCY_TO_HIDE = {
+	yotr_rabbitshrine_placer = true,
+}
+
+-- These have the radius as their placer's first linked entity;
+-- generally the "real" placer is the second linked entity
+local PLACERS_SHOWFIRSTLINKED = {
+	winona_catapult_placer = true,
+	winona_spotlight_placer = true,
+	yotr_rabbitshrine_placer = true,
 }
 
 local GRIDPLACER_PREFABS = {
@@ -731,6 +755,9 @@ function Placer:OnUpdate(dt)
 			self.gridinst = self:MakeGridInst()
 		end
 		self:SetCursorVisibility(true)
+		-- DST reinvented this function, so just copy it over the single-player version so we can reuse the logic
+		-- without having additional checks everywhere
+		self.placeTestFn = self.placeTestFn or self.override_testfn
 	end
 	if COLORS.NEARTILE ~= "hidden" and not self.snap_to_tile then
 		if self.tileinst == nil then
@@ -750,7 +777,7 @@ function Placer:OnUpdate(dt)
 	end
 	--#rezecib Restores the default game behavior by holding ctrl, or if we have a non-permitted placeTestFn
 	local ctrl_disable = CTRL ~= TheInput:IsKeyDown(KEY_CTRL)
-	local disabled_place_test = (self.placeTestFn ~= nil or self.override_testfn ~= nil) and not ALLOW_PLACE_TEST[self.inst.prefab]
+	local disabled_place_test = self.placeTestFn ~= nil and not ALLOW_PLACE_TEST[self.inst.prefab]
 	if ctrl_disable or disabled_place_test or self.disabled or self.snap_to_boat_edge then
 		self:RemoveBuildGrid()
 		if self.tileinst then self.tileinst:Hide() end
@@ -780,6 +807,9 @@ function Placer:OnUpdate(dt)
 					v.AnimState:SetAddColour(color.x*2, color.y*2, color.z*2, 1)
 				end
 			end
+		else
+			-- we did actually get disabled, but restore the MultColour if it got messed with
+			self.inst.AnimState:SetMultColour(255, 255, 255, 1)
 		end
 		if self.inst.prefab:find("_actiongridplacer") then
 			self.inst:Hide()
@@ -911,7 +941,7 @@ function Placer:OnUpdate(dt)
 	end
 	
 	if self.testfn ~= nil then    
-		self.can_build = self:TestPoint(pt, self._rot)
+		self.can_build = self:TestPoint(self.inst, pt, self._rot)
 	else
 		self.can_build = true
 	end
@@ -935,22 +965,27 @@ function Placer:OnUpdate(dt)
 	end
 	--end of code that closely matches the normal Placer:OnUpdate
 	
-	local has_radius = PLACERS_WITH_RADIUS[self.inst.prefab]
+	local always_show = PLACERS_ALWAYSHOW[self.inst.prefab]
 	local color = self.can_build and COLORS.GOODPLACER or COLORS.BADPLACER
 	local mult = COLOR_OPTION_LOOKUP[color] == "black" and 0.1 or 1
 	local color_mult = COLOR_OPTION_LOOKUP[color] == "white" and (GRIDPLACER_PREFABS[self.inst.prefab] and 1 or 0.6) or 2
 	local should_hide = (HIDEPLACER or color == "hidden")
+	local use_transparency_to_hide = should_hide and PLACERS_USE_TRANSPARENCY_TO_HIDE[self.inst.prefab]
 	local hide = should_hide and "Hide" or "Show"
 	local show = should_hide and "Show" or "Hide"
 	if type(color) == "table" then
 		self.inst.AnimState:SetMultColour(mult, mult, mult, 1)
 		self.inst.AnimState:SetAddColour(color.x*color_mult, color.y*color_mult, color.z*color_mult, 1)
 	end
-	if has_radius then
+	if always_show then
 		-- placers with a radius have the radius as the main placer,
 		-- and the actual object placer as the first linked entity;
 		-- so we always show them
-		self.inst:Show()
+		if use_transparency_to_hide then
+			self.inst.AnimState:SetMultColour(255, 255, 255, 0)
+		else		
+			self.inst:Show()
+		end
 	else
 		self.inst[hide](self.inst)
 	end
@@ -1190,9 +1225,7 @@ local function PlacerPostInit(self)
 		if prefab == "sprinkler_placer" then
 			self.placeTestFn = sprinklerPlaceTestFn
 		end
-		if prefab == "winona_spotlight_placer" or prefab == "winona_catapult_placer" then
-			self.showFirstLinked = true
-		end
+		self.showFirstLinked = PLACERS_SHOWFIRSTLINKED[prefab]
 		if GRIDPLACER_PREFABS[prefab] then
 			ReplaceGridplacerAnim(self.inst)
 			local _oncanbuild = self.oncanbuild
